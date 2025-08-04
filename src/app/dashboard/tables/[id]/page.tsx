@@ -43,25 +43,31 @@ interface Table {
 const CustomAlert = ({ message, type, onClose }: { message: string; type: 'success' | 'error' | 'info'; onClose: () => void }) => {
   return (
     <motion.div
-      initial={{ opacity: 0, y: -50 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -50 }}
-      className={`fixed top-4 right-4 z-[99999] p-4 rounded-lg shadow-lg max-w-sm ${
+      initial={{ opacity: 0, scale: 0.95 }}
+      animate={{ opacity: 1, scale: 1 }}
+      exit={{ opacity: 0, scale: 0.95 }}
+      className={`fixed inset-0 flex items-center justify-center z-[99999] bg-black/50 backdrop-blur-sm`}
+      onClick={onClose}
+    >
+      <div className={`max-w-md mx-4 p-6 rounded-lg shadow-2xl ${
         type === 'success' ? 'bg-green-600 text-white' :
         type === 'error' ? 'bg-red-600 text-white' :
         'bg-blue-600 text-white'
-      }`}
-    >
-      <div className="flex items-center justify-between">
-        <span>{message}</span>
-        <Button
-          size="sm"
-          variant="ghost"
-          onClick={onClose}
-          className="text-white hover:bg-white/20 ml-2"
-        >
-          <X className="w-4 h-4" />
-        </Button>
+      }`}>
+        <div className="text-center">
+          <div className="text-lg font-semibold mb-2">
+            {type === 'success' ? '✅ Başarılı' :
+             type === 'error' ? '❌ Hata' :
+             'ℹ️ Bilgi'}
+          </div>
+          <p className="mb-4">{message}</p>
+          <Button
+            onClick={onClose}
+            className="bg-white/20 hover:bg-white/30 text-white"
+          >
+            Tamam
+          </Button>
+        </div>
       </div>
     </motion.div>
   )
@@ -150,7 +156,12 @@ export default function TableViewPage() {
         setIsEditing(false)
         setTable(editData)
       } else {
-        showAlert('Tablo güncellenirken hata oluştu!', 'error')
+        const errorData = await response.json()
+        if (errorData.error === 'Table not found or unauthorized') {
+          showAlert('Bu tabloyu düzenleme yetkiniz yok! Sadece kendi oluşturduğunuz tabloları düzenleyebilirsiniz.', 'error')
+        } else {
+          showAlert('Tablo güncellenirken hata oluştu!', 'error')
+        }
       }
     } catch (error) {
       console.error('Tablo güncelleme hatası:', error)
@@ -422,6 +433,29 @@ export default function TableViewPage() {
                     <div className="text-white font-medium">{currentData.items.length}</div>
                   </div>
                 </div>
+                
+                {/* Düzenleme modunda tablo bilgileri */}
+                {isEditing && (
+                  <div className="mt-6 space-y-4">
+                    <div>
+                      <div className="text-gray-400 text-sm mb-2">Tablo Adı</div>
+                      <Input
+                        value={currentData.name}
+                        onChange={(e) => updateEditData('name', e.target.value)}
+                        placeholder="Tablo adını girin..."
+                      />
+                    </div>
+                    <div>
+                      <div className="text-gray-400 text-sm mb-2">Tablo Şifresi (Opsiyonel)</div>
+                      <Input
+                        type="password"
+                        value={currentData.password || ''}
+                        onChange={(e) => updateEditData('password', e.target.value)}
+                        placeholder="Şifre belirlemek istemiyorsanız boş bırakın..."
+                      />
+                    </div>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </motion.div>

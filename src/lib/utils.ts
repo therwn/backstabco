@@ -8,11 +8,9 @@ export function cn(...inputs: ClassValue[]) {
 // Para birimi formatı
 export function formatCurrency(amount: number): string {
   return new Intl.NumberFormat('tr-TR', {
-    style: 'currency',
-    currency: 'TRY', // SILVER yerine TRY kullanıyoruz
     minimumFractionDigits: 0,
     maximumFractionDigits: 0
-  }).format(amount).replace('TRY', '').trim() + ' gümüş'
+  }).format(amount) + ' silver'
 }
 
 // Input için para birimi formatı (sadece sayılar)
