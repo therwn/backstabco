@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Search, ShoppingCart, Plus, Trash2, Edit, Save, X, Calendar, User, MapPin, DollarSign, Package, Eye, EyeOff } from 'lucide-react'
+import { Search, ShoppingCart, Plus, Trash2, Edit, Save, X, Calendar, User, MapPin, DollarSign, Package, Eye, EyeOff, HelpCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -36,6 +36,17 @@ const ItemSkeleton = () => (
     <div className="flex-1">
       <div className="h-4 bg-gray-700 rounded animate-pulse mb-2"></div>
       <div className="h-3 bg-gray-700 rounded animate-pulse w-2/3"></div>
+    </div>
+  </div>
+)
+
+// Tooltip Component
+const Tooltip = ({ children, content }: { children: React.ReactNode; content: string }) => (
+  <div className="group relative inline-block">
+    {children}
+    <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 text-xs text-white bg-black-800 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap z-50">
+      {content}
+      <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-black-800"></div>
     </div>
   </div>
 )
@@ -529,26 +540,30 @@ export default function CreateTablePage() {
                           <h3 className="text-white font-medium">Black Market</h3>
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <div>
-                            <label className="text-white text-sm font-medium mb-2 block">Alış Fiyatı</label>
-                            <Input
-                              type="number"
-                              placeholder="0"
-                              value={selectedItem.blackMarket.buyPrice}
-                              onChange={(e) => updateBlackMarket(selectedItem.item.id, 'buyPrice', parseInt(e.target.value) || 0)}
-                              disabled={!selectedItem.isEditing}
-                            />
-                          </div>
-                          <div>
-                            <label className="text-white text-sm font-medium mb-2 block">Alış Miktarı</label>
-                            <Input
-                              type="number"
-                              placeholder="1"
-                              value={selectedItem.blackMarket.buyQuantity}
-                              onChange={(e) => updateBlackMarket(selectedItem.item.id, 'buyQuantity', parseInt(e.target.value) || 1)}
-                              disabled={!selectedItem.isEditing}
-                            />
-                          </div>
+                          <Tooltip content="Black Market'ten alacağınız fiyat">
+                            <div>
+                              <label className="text-white text-sm font-medium mb-2 block">Alış Fiyatı</label>
+                              <Input
+                                type="number"
+                                placeholder="0"
+                                value={selectedItem.blackMarket.buyPrice}
+                                onChange={(e) => updateBlackMarket(selectedItem.item.id, 'buyPrice', parseInt(e.target.value) || 0)}
+                                disabled={!selectedItem.isEditing}
+                              />
+                            </div>
+                          </Tooltip>
+                          <Tooltip content="Black Market'ten alacağınız miktar">
+                            <div>
+                              <label className="text-white text-sm font-medium mb-2 block">Alış Miktarı</label>
+                              <Input
+                                type="number"
+                                placeholder="1"
+                                value={selectedItem.blackMarket.buyQuantity}
+                                onChange={(e) => updateBlackMarket(selectedItem.item.id, 'buyQuantity', parseInt(e.target.value) || 1)}
+                                disabled={!selectedItem.isEditing}
+                              />
+                            </div>
+                          </Tooltip>
                         </div>
                       </div>
 
@@ -610,32 +625,38 @@ export default function CreateTablePage() {
                                 </div>
                                 
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                                  <Input
-                                    type="number"
-                                    placeholder="Satış Fiyatı"
-                                    value={cityPrice.sellOrder}
-                                    onChange={(e) => updateCityPrice(selectedItem.item.id, cityPrice.city, 'sellOrder', parseInt(e.target.value) || 0)}
-                                    className="text-sm"
-                                    disabled={!selectedItem.isEditing}
-                                  />
+                                  <Tooltip content="Şehirde satacağınız fiyat">
+                                    <Input
+                                      type="number"
+                                      placeholder="Satış Fiyatı"
+                                      value={cityPrice.sellOrder}
+                                      onChange={(e) => updateCityPrice(selectedItem.item.id, cityPrice.city, 'sellOrder', parseInt(e.target.value) || 0)}
+                                      className="text-sm"
+                                      disabled={!selectedItem.isEditing}
+                                    />
+                                  </Tooltip>
                                   {globalBuySwitch && (
                                     <>
-                                      <Input
-                                        type="number"
-                                        placeholder="Alış Fiyatı"
-                                        value={cityPrice.buyOrder}
-                                        onChange={(e) => updateCityPrice(selectedItem.item.id, cityPrice.city, 'buyOrder', parseInt(e.target.value) || 0)}
-                                        className="text-sm"
-                                        disabled={!selectedItem.isEditing}
-                                      />
-                                      <Input
-                                        type="number"
-                                        placeholder="Miktar"
-                                        value={cityPrice.quantity}
-                                        onChange={(e) => updateCityPrice(selectedItem.item.id, cityPrice.city, 'quantity', parseInt(e.target.value) || 0)}
-                                        className="text-sm"
-                                        disabled={!selectedItem.isEditing}
-                                      />
+                                      <Tooltip content="Şehirde alacağınız fiyat">
+                                        <Input
+                                          type="number"
+                                          placeholder="Alış Fiyatı"
+                                          value={cityPrice.buyOrder}
+                                          onChange={(e) => updateCityPrice(selectedItem.item.id, cityPrice.city, 'buyOrder', parseInt(e.target.value) || 0)}
+                                          className="text-sm"
+                                          disabled={!selectedItem.isEditing}
+                                        />
+                                      </Tooltip>
+                                      <Tooltip content="Şehirde alacağınız miktar">
+                                        <Input
+                                          type="number"
+                                          placeholder="Miktar"
+                                          value={cityPrice.quantity}
+                                          onChange={(e) => updateCityPrice(selectedItem.item.id, cityPrice.city, 'quantity', parseInt(e.target.value) || 0)}
+                                          className="text-sm"
+                                          disabled={!selectedItem.isEditing}
+                                        />
+                                      </Tooltip>
                                     </>
                                   )}
                                 </div>
