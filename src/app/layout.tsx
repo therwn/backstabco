@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Providers } from "./providers";
@@ -18,7 +18,11 @@ export const metadata: Metadata = {
   description: "BACKSTAB CO guild'iniz için gelişmiş Black Market takip sistemi. Caerleon'dan diğer şehirlere, tüm ticaret verilerinizi tek yerden yönetin.",
   keywords: "Albion Online, Guild Management, Black Market, Trading, BACKSTAB CO",
   authors: [{ name: "BACKSTAB CO" }],
-  viewport: "width=device-width, initial-scale=1",
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
 };
 
 export default function RootLayout({

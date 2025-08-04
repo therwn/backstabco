@@ -2,16 +2,21 @@ import { NextAuthOptions } from 'next-auth'
 import DiscordProvider from 'next-auth/providers/discord'
 import { User } from '@/types/albion'
 
+// Environment variables kontrolü
+const DISCORD_CLIENT_ID = process.env.DISCORD_CLIENT_ID || '1401636182202388501'
+const DISCORD_CLIENT_SECRET = process.env.DISCORD_CLIENT_SECRET || 'rBH_DdF38X1fvMCuTq0EfgwMeVZjY-LG'
+const DISCORD_GUILD_ID = process.env.DISCORD_GUILD_ID || '1366161562238451853'
+
 // Debug için environment variables'ları kontrol edelim
-console.log('DISCORD_CLIENT_ID:', process.env.DISCORD_CLIENT_ID)
-console.log('DISCORD_CLIENT_SECRET:', process.env.DISCORD_CLIENT_SECRET)
-console.log('DISCORD_GUILD_ID:', process.env.DISCORD_GUILD_ID)
+console.log('DISCORD_CLIENT_ID:', DISCORD_CLIENT_ID ? 'SET' : 'NOT SET')
+console.log('DISCORD_CLIENT_SECRET:', DISCORD_CLIENT_SECRET ? 'SET' : 'NOT SET')
+console.log('DISCORD_GUILD_ID:', DISCORD_GUILD_ID ? 'SET' : 'NOT SET')
 
 export const authOptions: NextAuthOptions = {
   providers: [
     DiscordProvider({
-      clientId: process.env.DISCORD_CLIENT_ID || '1401636182202388501',
-      clientSecret: process.env.DISCORD_CLIENT_SECRET || 'rBH_DdF38X1fvMCuTq0EfgwMeVZjY-LG',
+      clientId: DISCORD_CLIENT_ID,
+      clientSecret: DISCORD_CLIENT_SECRET,
       authorization: {
         params: {
           scope: 'identify email guilds'
