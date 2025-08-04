@@ -99,8 +99,8 @@ export default function TableViewPage() {
         setTable(data)
         setEditData(data)
         
-        // Eğer tablo şifreli ise şifre modal'ını göster
-        if (data.password) {
+        // Sadece şifreli tablolar için şifre modal'ını göster
+        if (data.password && data.password.trim() !== '') {
           setShowPasswordModal(true)
         }
       } else {
