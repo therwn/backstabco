@@ -114,13 +114,14 @@ export async function getUserTables(userId: string): Promise<BlackMarketTable[]>
 }
 
 // Tablo detaylarını getir
-export async function getTableDetails(tableId: number): Promise<BlackMarketTable | null> {
+export async function getTableDetails(tableId: string, userId: string): Promise<BlackMarketTable | null> {
   try {
     // Tablo bilgileri
     const { data: tableData, error: tableError } = await supabase
       .from('black_market_tables')
       .select('*')
       .eq('id', tableId)
+      .eq('creator_id', userId)
       .single()
 
     if (tableError || !tableData) return null
@@ -162,7 +163,7 @@ export async function getTableDetails(tableId: number): Promise<BlackMarketTable
 }
 
 // Tablo sil
-export async function deleteTable(tableId: number, userId: string): Promise<boolean> {
+export async function deleteTable(tableId: string, userId: string): Promise<boolean> {
   try {
     const { error } = await supabase
       .from('black_market_tables')

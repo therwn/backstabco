@@ -184,10 +184,12 @@ export default function DashboardPage() {
                           </div>
                         </div>
                         <div className="flex items-center space-x-2">
-                          <Button size="sm" variant="outline" className="text-white border-white hover:bg-white hover:text-black-900">
-                            <Eye className="w-4 h-4 mr-1" />
-                            Görüntüle
-                          </Button>
+                          <Link href={`/dashboard/tables/${table.id}`}>
+                            <Button size="sm" variant="outline" className="text-white border-white hover:bg-white hover:text-black-900">
+                              <Eye className="w-4 h-4 mr-1" />
+                              Görüntüle
+                            </Button>
+                          </Link>
                           <Button 
                             size="sm" 
                             variant="outline" 

@@ -266,6 +266,7 @@ export default function CreateTablePage() {
 
       if (result.success) {
         alert('Tablo başarıyla oluşturuldu!')
+        // Tablo oluşturulduktan sonra dashboard'a yönlendir
         router.push('/dashboard')
       } else {
         alert('Tablo oluşturulurken hata: ' + result.error)
@@ -411,9 +412,9 @@ export default function CreateTablePage() {
                           initial={{ opacity: 0, scale: 0.95, y: 20 }}
                           animate={{ opacity: 1, scale: 1, y: 0 }}
                           exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                          className="fixed inset-0 flex items-center justify-center z-[9999]"
+                          className="fixed inset-0 flex items-center justify-center z-[9999] pointer-events-none"
                         >
-                          <div className="w-full max-w-5xl mx-4 bg-black-800 border border-gray-600 rounded-lg shadow-2xl">
+                          <div className="w-full max-w-5xl mx-4 bg-black-800 border border-gray-600 rounded-lg shadow-2xl pointer-events-auto">
                             <div className="p-6 border-b border-gray-600">
                               <div className="flex items-center space-x-2">
                                 <Search className="w-5 h-5 text-gray-400" />
