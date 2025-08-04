@@ -151,7 +151,15 @@ export default function CreateTablePage() {
   const updateTier = (itemId: string, tier: number) => {
     setSelectedItems(prev => prev.map(selectedItem => {
       if (selectedItem.item.id === itemId) {
-        return { ...selectedItem, selectedTier: tier }
+        return { 
+          ...selectedItem, 
+          selectedTier: tier,
+          // Tier değişince item'ı da güncelle
+          item: {
+            ...selectedItem.item,
+            tier: tier
+          }
+        }
       }
       return selectedItem
     }))
@@ -161,7 +169,15 @@ export default function CreateTablePage() {
   const updateEnchantment = (itemId: string, enchantment: number) => {
     setSelectedItems(prev => prev.map(selectedItem => {
       if (selectedItem.item.id === itemId) {
-        return { ...selectedItem, selectedEnchantment: enchantment }
+        return { 
+          ...selectedItem, 
+          selectedEnchantment: enchantment,
+          // Enchantment değişince item'ı da güncelle
+          item: {
+            ...selectedItem.item,
+            enchantment: enchantment
+          }
+        }
       }
       return selectedItem
     }))
@@ -405,7 +421,7 @@ export default function CreateTablePage() {
                           initial={{ opacity: 0, scale: 0.95, y: 20 }}
                           animate={{ opacity: 1, scale: 1, y: 0 }}
                           exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                          className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-full max-w-4xl bg-black-800 border border-gray-600 rounded-lg shadow-2xl z-[9999]"
+                          className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-full max-w-5xl bg-black-800 border border-gray-600 rounded-lg shadow-2xl z-[9999]"
                         >
                           <div className="p-6 border-b border-gray-600">
                             <div className="flex items-center space-x-2">
@@ -445,13 +461,13 @@ export default function CreateTablePage() {
                                     whileHover={{ backgroundColor: '#374151' }}
                                     onClick={() => handleItemSelect(item)}
                                   >
-                                    <div className="w-12 h-12 bg-gray-700 rounded flex items-center justify-center">
+                                    <div className="w-16 h-16 bg-gray-700 rounded flex items-center justify-center">
                                       <Image
                                         src={getItemImageUrl(item.id)}
                                         alt={item.name}
-                                        width={48}
-                                        height={48}
-                                        className="w-10 h-10"
+                                        width={64}
+                                        height={64}
+                                        className="w-14 h-14"
                                         onError={(e) => {
                                           const target = e.target as HTMLImageElement
                                           target.style.display = 'none'
@@ -510,13 +526,13 @@ export default function CreateTablePage() {
                       {/* Item Header - Always Visible */}
                       <div className="flex items-center justify-between p-6">
                         <div className="flex items-center space-x-4">
-                          <div className="w-16 h-16 bg-gray-700 rounded flex items-center justify-center">
+                          <div className="w-20 h-20 bg-gray-700 rounded flex items-center justify-center">
                             <Image
                               src={getItemImageUrl(selectedItem.item.id, 1, selectedItem.selectedEnchantment)}
                               alt={selectedItem.item.name}
-                              width={64}
-                              height={64}
-                              className="w-14 h-14"
+                              width={80}
+                              height={80}
+                              className="w-18 h-18"
                               onError={(e) => {
                                 const target = e.target as HTMLImageElement
                                 target.style.display = 'none'
