@@ -33,6 +33,34 @@ interface SelectedItem {
   isCollapsed: boolean
 }
 
+// Custom Alert Component
+const CustomAlert = ({ message, type, onClose }: { message: string; type: 'success' | 'error' | 'info'; onClose: () => void }) => {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: -50 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -50 }}
+      className={`fixed top-4 right-4 z-[99999] p-4 rounded-lg shadow-lg max-w-sm ${
+        type === 'success' ? 'bg-green-600 text-white' :
+        type === 'error' ? 'bg-red-600 text-white' :
+        'bg-blue-600 text-white'
+      }`}
+    >
+      <div className="flex items-center justify-between">
+        <span>{message}</span>
+        <Button
+          size="sm"
+          variant="ghost"
+          onClick={onClose}
+          className="text-white hover:bg-white/20 ml-2"
+        >
+          <X className="w-4 h-4" />
+        </Button>
+      </div>
+    </motion.div>
+  )
+}
+
 // Skeleton Loading Component
 const ItemSkeleton = () => (
   <div className="flex items-center space-x-3 p-3">
@@ -56,6 +84,7 @@ export default function CreateTablePage() {
   const [isSearching, setIsSearching] = useState(false)
   const [showSearchModal, setShowSearchModal] = useState(false)
   const [globalBuySwitch, setGlobalBuySwitch] = useState(false)
+  const [alert, setAlert] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null)
 
   // Click outside to close search modal
   useEffect(() => {
@@ -68,6 +97,12 @@ export default function CreateTablePage() {
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
+
+  // Show custom alert
+  const showAlert = (message: string, type: 'success' | 'error' | 'info') => {
+    setAlert({ message, type })
+    setTimeout(() => setAlert(null), 5000)
+  }
 
   // Arama yap
   const handleSearch = async () => {
@@ -153,7 +188,12 @@ export default function CreateTablePage() {
       if (selectedItem.item.id === itemId) {
         return { 
           ...selectedItem, 
-          selectedTier: tier
+          selectedTier: tier,
+          // Item'ı da güncelle ki görsel değişsin
+          item: {
+            ...selectedItem.item,
+            tier: tier
+          }
         }
       }
       return selectedItem
@@ -166,7 +206,12 @@ export default function CreateTablePage() {
       if (selectedItem.item.id === itemId) {
         return { 
           ...selectedItem, 
-          selectedEnchantment: enchantment
+          selectedEnchantment: enchantment,
+          // Item'ı da güncelle ki görsel değişsin
+          item: {
+            ...selectedItem.item,
+            enchantment: enchantment
+          }
         }
       }
       return selectedItem
@@ -228,12 +273,12 @@ export default function CreateTablePage() {
   // Tablo oluştur
   const createTable = async () => {
     if (!tableName.trim()) {
-      alert('Tablo adı gerekli!')
+      showAlert('Tablo adı gerekli!', 'error')
       return
     }
 
     if (selectedItems.length === 0) {
-      alert('En az bir item seçmelisiniz!')
+      showAlert('En az bir item seçmelisiniz!', 'error')
       return
     }
 
@@ -265,20 +310,30 @@ export default function CreateTablePage() {
       const result = await response.json()
 
       if (result.success) {
-        alert('Tablo başarıyla oluşturuldu!')
-        // Tablo oluşturulduktan sonra dashboard'a yönlendir
+        showAlert('Tablo başarıyla oluşturuldu!', 'success')
         router.push('/dashboard')
       } else {
-        alert('Tablo oluşturulurken hata: ' + result.error)
+        showAlert('Tablo oluşturulurken hata: ' + result.error, 'error')
       }
     } catch (error) {
       console.error('Tablo oluşturma hatası:', error)
-      alert('Tablo oluşturulurken bir hata oluştu.')
+      showAlert('Tablo oluşturulurken bir hata oluştu.', 'error')
     }
   }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-black-900 via-black-800 to-black-900 relative overflow-hidden">
+      {/* Custom Alert */}
+      <AnimatePresence>
+        {alert && (
+          <CustomAlert
+            message={alert.message}
+            type={alert.type}
+            onClose={() => setAlert(null)}
+          />
+        )}
+      </AnimatePresence>
+
       {/* Animated Background Lines */}
       <div className="absolute inset-0 pointer-events-none">
         <div className="lines">

@@ -2,10 +2,11 @@
 
 import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import { ArrowLeft, Eye, Trash2, Edit, Save, X } from 'lucide-react'
+import { ArrowLeft, Eye, Trash2, Edit, Save, X, Lock } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { motion } from 'framer-motion'
+import { Input } from '@/components/ui/input'
+import { motion, AnimatePresence } from 'framer-motion'
 import { useSession } from 'next-auth/react'
 import Logo from '@/assets/logo.svg'
 import Image from 'next/image'
@@ -37,6 +38,34 @@ interface Table {
   items: TableItem[]
 }
 
+// Custom Alert Component
+const CustomAlert = ({ message, type, onClose }: { message: string; type: 'success' | 'error' | 'info'; onClose: () => void }) => {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: -50 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -50 }}
+      className={`fixed top-4 right-4 z-[99999] p-4 rounded-lg shadow-lg max-w-sm ${
+        type === 'success' ? 'bg-green-600 text-white' :
+        type === 'error' ? 'bg-red-600 text-white' :
+        'bg-blue-600 text-white'
+      }`}
+    >
+      <div className="flex items-center justify-between">
+        <span>{message}</span>
+        <Button
+          size="sm"
+          variant="ghost"
+          onClick={onClose}
+          className="text-white hover:bg-white/20 ml-2"
+        >
+          <X className="w-4 h-4" />
+        </Button>
+      </div>
+    </motion.div>
+  )
+}
+
 export default function TableViewPage() {
   const params = useParams()
   const router = useRouter()
@@ -44,6 +73,9 @@ export default function TableViewPage() {
   const [table, setTable] = useState<Table | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isEditing, setIsEditing] = useState(false)
+  const [showPasswordModal, setShowPasswordModal] = useState(false)
+  const [password, setPassword] = useState('')
+  const [alert, setAlert] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null)
 
   useEffect(() => {
     if (params.id) {
@@ -51,22 +83,44 @@ export default function TableViewPage() {
     }
   }, [params.id])
 
+  // Show custom alert
+  const showAlert = (message: string, type: 'success' | 'error' | 'info') => {
+    setAlert({ message, type })
+    setTimeout(() => setAlert(null), 5000)
+  }
+
   const fetchTableDetails = async (tableId: string) => {
     try {
       const response = await fetch(`/api/tables/${tableId}`)
       if (response.ok) {
         const data = await response.json()
         setTable(data)
+        
+        // Eğer tablo şifreli ise şifre modal'ını göster
+        if (data.password) {
+          setShowPasswordModal(true)
+        }
       } else {
-        alert('Tablo bulunamadı!')
+        showAlert('Tablo bulunamadı!', 'error')
         router.push('/dashboard')
       }
     } catch (error) {
       console.error('Tablo detayları getirilirken hata:', error)
-      alert('Tablo detayları yüklenirken hata oluştu!')
+      showAlert('Tablo detayları yüklenirken hata oluştu!', 'error')
       router.push('/dashboard')
     } finally {
       setIsLoading(false)
+    }
+  }
+
+  const checkPassword = () => {
+    if (table && table.password && password === table.password) {
+      setShowPasswordModal(false)
+      setPassword('')
+      showAlert('Şifre doğru!', 'success')
+    } else {
+      showAlert('Şifre yanlış!', 'error')
+      setPassword('')
     }
   }
 
@@ -79,14 +133,14 @@ export default function TableViewPage() {
       })
 
       if (response.ok) {
-        alert('Tablo başarıyla silindi!')
+        showAlert('Tablo başarıyla silindi!', 'success')
         router.push('/dashboard')
       } else {
-        alert('Tablo silinirken hata oluştu!')
+        showAlert('Tablo silinirken hata oluştu!', 'error')
       }
     } catch (error) {
       console.error('Tablo silme hatası:', error)
-      alert('Tablo silinirken bir hata oluştu!')
+      showAlert('Tablo silinirken bir hata oluştu!', 'error')
     }
   }
 
@@ -120,6 +174,78 @@ export default function TableViewPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-black-900 via-black-800 to-black-900 relative overflow-hidden">
+      {/* Custom Alert */}
+      <AnimatePresence>
+        {alert && (
+          <CustomAlert
+            message={alert.message}
+            type={alert.type}
+            onClose={() => setAlert(null)}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Password Modal */}
+      <AnimatePresence>
+        {showPasswordModal && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[9998]"
+              onClick={() => {
+                setShowPasswordModal(false)
+                router.push('/dashboard')
+              }}
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="fixed inset-0 flex items-center justify-center z-[9999]"
+            >
+              <div className="w-full max-w-md mx-4 bg-black-800 border border-gray-600 rounded-lg shadow-2xl p-6">
+                <div className="text-center mb-6">
+                  <Lock className="w-12 h-12 text-[#F3B22D] mx-auto mb-4" />
+                  <h2 className="text-xl font-bold text-white mb-2">Şifre Gerekli</h2>
+                  <p className="text-gray-400">Bu tablo şifre korumalıdır.</p>
+                </div>
+                <div className="space-y-4">
+                  <Input
+                    type="password"
+                    placeholder="Tablo şifresini girin..."
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    onKeyPress={(e) => e.key === 'Enter' && checkPassword()}
+                    className="w-full"
+                    autoFocus
+                  />
+                  <div className="flex space-x-3">
+                    <Button
+                      className="flex-1"
+                      onClick={checkPassword}
+                    >
+                      Giriş Yap
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="flex-1 text-white border-white hover:bg-white hover:text-black-900"
+                      onClick={() => {
+                        setShowPasswordModal(false)
+                        router.push('/dashboard')
+                      }}
+                    >
+                      İptal
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
       {/* Animated Background Lines */}
       <div className="absolute inset-0 pointer-events-none">
         <div className="lines">
@@ -157,6 +283,9 @@ export default function TableViewPage() {
                 height={32}
               />
               <h1 className="text-2xl font-bold text-white">{table.name}</h1>
+              {table.password && (
+                <Lock className="w-5 h-5 text-[#F3B22D]" />
+              )}
             </div>
           </div>
           <div className="flex items-center space-x-2">
