@@ -1,12 +1,13 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
-import { motion } from 'framer-motion'
-import { Search, ShoppingCart, Plus, Trash2, Edit, Save, X, Calendar, User } from 'lucide-react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { Search, ShoppingCart, Plus, Trash2, Edit, Save, X, Calendar, User, MapPin, DollarSign, Package } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
+import { Switch } from '@/components/ui/switch'
 import { AlbionItem, searchItems, getAvailableTiersForItem, getAvailableEnchantmentsForItem, getItemImageUrl } from '@/lib/albion-api'
 import { AlbionCity, ALBION_CITIES } from '@/types/albion'
 import Image from 'next/image'
@@ -14,34 +15,48 @@ import { useSession } from 'next-auth/react'
 
 interface SelectedItem {
   item: AlbionItem
-  buyPrice: number
-  buyQuantity: number
+  blackMarket: {
+    buyPrice: number
+    buyQuantity: number
+  }
   cityPrices: {
     city: AlbionCity
+    enabled: boolean
     sellOrder: number
     buyOrder: number
     quantity: number
-    quality: number
   }[]
 }
 
 export default function CreateTablePage() {
   const router = useRouter()
   const { data: session } = useSession()
+  const searchRef = useRef<HTMLDivElement>(null)
   const [tableName, setTableName] = useState('')
   const [tablePassword, setTablePassword] = useState('')
   const [searchQuery, setSearchQuery] = useState('')
   const [searchResults, setSearchResults] = useState<AlbionItem[]>([])
   const [selectedItems, setSelectedItems] = useState<SelectedItem[]>([])
   const [isSearching, setIsSearching] = useState(false)
-  const [showSearchResults, setShowSearchResults] = useState(false)
+  const [showSearchModal, setShowSearchModal] = useState(false)
+
+  // Click outside to close search modal
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
+        setShowSearchModal(false)
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
 
   // Arama yap
   const handleSearch = async () => {
     if (!searchQuery.trim()) return
     
     setIsSearching(true)
-    setShowSearchResults(true)
     try {
       const results = await searchItems(searchQuery)
       setSearchResults(results)
@@ -57,26 +72,62 @@ export default function CreateTablePage() {
   const handleItemSelect = (item: AlbionItem) => {
     const newSelectedItem: SelectedItem = {
       item,
-      buyPrice: 0,
-      buyQuantity: 1,
+      blackMarket: {
+        buyPrice: 0,
+        buyQuantity: 1
+      },
       cityPrices: ALBION_CITIES.map(city => ({
         city,
+        enabled: false,
         sellOrder: 0,
         buyOrder: 0,
-        quantity: 0,
-        quality: 1
+        quantity: 0
       }))
     }
     
     setSelectedItems(prev => [...prev, newSelectedItem])
     setSearchQuery('')
     setSearchResults([])
-    setShowSearchResults(false)
+    setShowSearchModal(false)
   }
 
   // Seçili item'ı kaldır
   const removeItem = (itemId: string) => {
     setSelectedItems(prev => prev.filter(selectedItem => selectedItem.item.id !== itemId))
+  }
+
+  // Black Market bilgilerini güncelle
+  const updateBlackMarket = (itemId: string, field: string, value: number) => {
+    setSelectedItems(prev => prev.map(selectedItem => {
+      if (selectedItem.item.id === itemId) {
+        return {
+          ...selectedItem,
+          blackMarket: {
+            ...selectedItem.blackMarket,
+            [field]: value
+          }
+        }
+      }
+      return selectedItem
+    }))
+  }
+
+  // Şehir switch'ini toggle et
+  const toggleCity = (itemId: string, city: AlbionCity) => {
+    setSelectedItems(prev => prev.map(selectedItem => {
+      if (selectedItem.item.id === itemId) {
+        return {
+          ...selectedItem,
+          cityPrices: selectedItem.cityPrices.map(cityPrice => {
+            if (cityPrice.city === city) {
+              return { ...cityPrice, enabled: !cityPrice.enabled }
+            }
+            return cityPrice
+          })
+        }
+      }
+      return selectedItem
+    }))
   }
 
   // Şehir fiyatını güncelle
@@ -117,9 +168,9 @@ export default function CreateTablePage() {
         itemTier: selectedItem.item.tier,
         itemEnchantment: 0,
         itemQuality: 1,
-        buyPrice: selectedItem.buyPrice,
-        buyQuantity: selectedItem.buyQuantity,
-        cityPrices: selectedItem.cityPrices
+        buyPrice: selectedItem.blackMarket.buyPrice,
+        buyQuantity: selectedItem.blackMarket.buyQuantity,
+        cityPrices: selectedItem.cityPrices.filter(cp => cp.enabled)
       }))
 
       const response = await fetch('/api/tables', {
@@ -242,7 +293,7 @@ export default function CreateTablePage() {
             </Card>
           </motion.div>
 
-          {/* Section 2: Item ve Şehir Bilgileri */}
+          {/* Section 2: Item Arama */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -251,128 +302,167 @@ export default function CreateTablePage() {
             <Card className="card-glass">
               <CardHeader>
                 <CardTitle className="text-white flex items-center">
-                  <ShoppingCart className="w-5 h-5 mr-2" />
-                  Item ve Şehir Bilgileri
+                  <Search className="w-5 h-5 mr-2" />
+                  Item Arama
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-6">
-                
-                {/* Item Arama */}
-                <div className="relative">
-                  <div className="flex space-x-2">
-                    <div className="flex-1 relative">
-                      <Input
-                        type="text"
-                        placeholder="Item arayın... (macOS Finder gibi)"
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-                        className="w-full"
-                      />
-                      <Button 
-                        size="sm" 
-                        className="absolute right-2 top-1/2 transform -translate-y-1/2"
-                        onClick={handleSearch}
-                        disabled={isSearching}
-                      >
-                        <Search className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </div>
+              <CardContent>
+                <div className="relative" ref={searchRef}>
+                  <Button 
+                    className="w-full justify-start text-left font-normal bg-black-700 border-gray-600 hover:bg-black-600"
+                    onClick={() => setShowSearchModal(true)}
+                  >
+                    <Search className="w-4 h-4 mr-2 text-gray-400" />
+                    <span className="text-gray-400">Item arayın... (macOS Finder tarzı)</span>
+                  </Button>
 
-                  {/* Search Results - macOS Finder Style */}
-                  {showSearchResults && (
-                    <motion.div
-                      initial={{ opacity: 0, y: -10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      className="absolute top-full left-0 right-0 mt-2 bg-black-800 border border-gray-600 rounded-lg shadow-lg z-50 max-h-60 overflow-y-auto"
-                    >
-                      {isSearching ? (
-                        <div className="p-4 text-center">
-                          <div className="w-6 h-6 border-2 border-[#F3B22D] border-t-transparent rounded-full animate-spin mx-auto"></div>
-                          <p className="text-gray-400 mt-2">Aranıyor...</p>
-                        </div>
-                      ) : searchResults.length > 0 ? (
-                        <div className="py-2">
-                          {searchResults.map((item) => (
-                            <motion.div
-                              key={item.id}
-                              className="flex items-center space-x-3 p-3 hover:bg-black-700 cursor-pointer"
-                              whileHover={{ backgroundColor: '#374151' }}
-                              onClick={() => handleItemSelect(item)}
-                            >
-                              <Image
-                                src={getItemImageUrl(item.id)}
-                                alt={item.name}
-                                width={32}
-                                height={32}
-                                className="w-8 h-8"
-                              />
-                              <div className="flex-1">
-                                <div className="text-white font-medium">{item.name}</div>
-                                <div className="text-gray-400 text-sm">T{item.tier} • {item.category}</div>
-                              </div>
-                              <Plus className="w-4 h-4 text-[#F3B22D]" />
-                            </motion.div>
-                          ))}
-                        </div>
-                      ) : searchQuery && (
-                        <div className="p-4 text-center text-gray-400">
-                          Sonuç bulunamadı
-                        </div>
-                      )}
-                    </motion.div>
-                  )}
-                </div>
-
-                {/* Seçili Item'lar */}
-                {selectedItems.length > 0 && (
-                  <div className="space-y-4">
-                    <h3 className="text-white font-medium">Seçili Item'lar ({selectedItems.length})</h3>
-                    {selectedItems.map((selectedItem, index) => (
+                  {/* macOS Finder Style Search Modal */}
+                  <AnimatePresence>
+                    {showSearchModal && (
                       <motion.div
-                        key={selectedItem.item.id}
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className="border border-gray-600 rounded-lg p-4"
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.95 }}
+                        className="absolute top-full left-0 right-0 mt-2 bg-black-800 border border-gray-600 rounded-lg shadow-2xl z-50"
                       >
-                        <div className="flex items-center justify-between mb-4">
-                          <div className="flex items-center space-x-3">
+                        <div className="p-4 border-b border-gray-600">
+                          <div className="flex items-center space-x-2">
+                            <Search className="w-4 h-4 text-gray-400" />
+                            <Input
+                              type="text"
+                              placeholder="Item adı yazın..."
+                              value={searchQuery}
+                              onChange={(e) => {
+                                setSearchQuery(e.target.value)
+                                if (e.target.value.trim()) {
+                                  handleSearch()
+                                }
+                              }}
+                              className="flex-1 bg-transparent border-none focus:ring-0 text-white"
+                              autoFocus
+                            />
+                            {isSearching && (
+                              <div className="w-4 h-4 border-2 border-[#F3B22D] border-t-transparent rounded-full animate-spin"></div>
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="max-h-80 overflow-y-auto">
+                          {searchResults.length > 0 ? (
+                            <div className="py-2">
+                              {searchResults.map((item) => (
+                                <motion.div
+                                  key={item.id}
+                                  className="flex items-center space-x-3 p-3 hover:bg-black-700 cursor-pointer"
+                                  whileHover={{ backgroundColor: '#374151' }}
+                                  onClick={() => handleItemSelect(item)}
+                                >
+                                  <div className="w-8 h-8 bg-gray-700 rounded flex items-center justify-center">
+                                    <Image
+                                      src={getItemImageUrl(item.id)}
+                                      alt={item.name}
+                                      width={24}
+                                      height={24}
+                                      className="w-6 h-6"
+                                      onError={(e) => {
+                                        const target = e.target as HTMLImageElement
+                                        target.style.display = 'none'
+                                      }}
+                                    />
+                                  </div>
+                                  <div className="flex-1">
+                                    <div className="text-white font-medium">{item.name}</div>
+                                    <div className="text-gray-400 text-sm">T{item.tier} • {item.category}</div>
+                                  </div>
+                                  <Plus className="w-4 h-4 text-[#F3B22D]" />
+                                </motion.div>
+                              ))}
+                            </div>
+                          ) : searchQuery && !isSearching ? (
+                            <div className="p-4 text-center text-gray-400">
+                              Sonuç bulunamadı
+                            </div>
+                          ) : (
+                            <div className="p-4 text-center text-gray-400">
+                              Arama yapmak için yazmaya başlayın
+                            </div>
+                          )}
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+
+          {/* Section 3: Seçili Item'lar */}
+          {selectedItems.length > 0 && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.6 }}
+            >
+              <Card className="card-glass">
+                <CardHeader>
+                  <CardTitle className="text-white flex items-center">
+                    <ShoppingCart className="w-5 h-5 mr-2" />
+                    Seçili Item'lar ({selectedItems.length})
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  {selectedItems.map((selectedItem, index) => (
+                    <motion.div
+                      key={selectedItem.item.id}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="border border-gray-600 rounded-lg p-6"
+                    >
+                      {/* Item Header */}
+                      <div className="flex items-center justify-between mb-6">
+                        <div className="flex items-center space-x-3">
+                          <div className="w-12 h-12 bg-gray-700 rounded flex items-center justify-center">
                             <Image
                               src={getItemImageUrl(selectedItem.item.id)}
                               alt={selectedItem.item.name}
                               width={32}
                               height={32}
                               className="w-8 h-8"
+                              onError={(e) => {
+                                const target = e.target as HTMLImageElement
+                                target.style.display = 'none'
+                              }}
                             />
-                            <div>
-                              <div className="text-white font-medium">{selectedItem.item.name}</div>
-                              <div className="text-gray-400 text-sm">T{selectedItem.item.tier} • {selectedItem.item.category}</div>
-                            </div>
                           </div>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => removeItem(selectedItem.item.id)}
-                            className="text-red-400 border-red-400 hover:bg-red-400 hover:text-white"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
+                          <div>
+                            <div className="text-white font-medium text-lg">{selectedItem.item.name}</div>
+                            <div className="text-gray-400 text-sm">T{selectedItem.item.tier} • {selectedItem.item.category}</div>
+                          </div>
                         </div>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => removeItem(selectedItem.item.id)}
+                          className="text-red-400 border-red-400 hover:bg-red-400 hover:text-white"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
 
-                        {/* Buy Price ve Quantity */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                      {/* Black Market Section */}
+                      <div className="mb-6">
+                        <div className="flex items-center space-x-2 mb-4">
+                          <DollarSign className="w-5 h-5 text-[#F3B22D]" />
+                          <h3 className="text-white font-medium">Black Market</h3>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           <div>
                             <label className="text-white text-sm font-medium mb-2 block">Alış Fiyatı</label>
                             <Input
                               type="number"
                               placeholder="0"
-                              value={selectedItem.buyPrice}
-                              onChange={(e) => {
-                                const newSelectedItems = [...selectedItems]
-                                newSelectedItems[index].buyPrice = parseInt(e.target.value) || 0
-                                setSelectedItems(newSelectedItems)
-                              }}
+                              value={selectedItem.blackMarket.buyPrice}
+                              onChange={(e) => updateBlackMarket(selectedItem.item.id, 'buyPrice', parseInt(e.target.value) || 0)}
                             />
                           </div>
                           <div>
@@ -380,61 +470,75 @@ export default function CreateTablePage() {
                             <Input
                               type="number"
                               placeholder="1"
-                              value={selectedItem.buyQuantity}
-                              onChange={(e) => {
-                                const newSelectedItems = [...selectedItems]
-                                newSelectedItems[index].buyQuantity = parseInt(e.target.value) || 1
-                                setSelectedItems(newSelectedItems)
-                              }}
+                              value={selectedItem.blackMarket.buyQuantity}
+                              onChange={(e) => updateBlackMarket(selectedItem.item.id, 'buyQuantity', parseInt(e.target.value) || 1)}
                             />
                           </div>
                         </div>
+                      </div>
 
-                        {/* Şehir Fiyatları */}
-                        <div>
-                          <h4 className="text-white font-medium mb-3">Şehir Fiyatları</h4>
-                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                            {selectedItem.cityPrices.map((cityPrice, cityIndex) => (
-                              <div key={cityPrice.city} className="border border-gray-600 rounded p-3">
-                                <div className="text-white font-medium text-sm mb-2">{cityPrice.city}</div>
-                                <div className="space-y-2">
+                      {/* Şehir Fiyatları */}
+                      <div>
+                        <div className="flex items-center space-x-2 mb-4">
+                          <MapPin className="w-5 h-5 text-[#F3B22D]" />
+                          <h3 className="text-white font-medium">Şehir Fiyatları</h3>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                          {selectedItem.cityPrices.map((cityPrice) => (
+                            <div key={cityPrice.city} className="border border-gray-600 rounded-lg p-4">
+                              <div className="flex items-center justify-between mb-3">
+                                <div className="flex items-center space-x-2">
+                                  <MapPin className="w-4 h-4 text-gray-400" />
+                                  <span className="text-white font-medium text-sm">{cityPrice.city}</span>
+                                </div>
+                                <Switch
+                                  checked={cityPrice.enabled}
+                                  onCheckedChange={() => toggleCity(selectedItem.item.id, cityPrice.city)}
+                                />
+                              </div>
+                              
+                              {cityPrice.enabled && (
+                                <motion.div
+                                  initial={{ opacity: 0, height: 0 }}
+                                  animate={{ opacity: 1, height: 'auto' }}
+                                  exit={{ opacity: 0, height: 0 }}
+                                  className="space-y-3"
+                                >
                                   <Input
                                     type="number"
                                     placeholder="Satış Siparişi"
                                     value={cityPrice.sellOrder}
                                     onChange={(e) => updateCityPrice(selectedItem.item.id, cityPrice.city, 'sellOrder', parseInt(e.target.value) || 0)}
-                                    className="text-xs"
+                                    className="text-sm"
                                   />
                                   <Input
                                     type="number"
                                     placeholder="Alış Siparişi"
                                     value={cityPrice.buyOrder}
                                     onChange={(e) => updateCityPrice(selectedItem.item.id, cityPrice.city, 'buyOrder', parseInt(e.target.value) || 0)}
-                                    className="text-xs"
+                                    className="text-sm"
                                   />
                                   <Input
                                     type="number"
                                     placeholder="Miktar"
                                     value={cityPrice.quantity}
                                     onChange={(e) => updateCityPrice(selectedItem.item.id, cityPrice.city, 'quantity', parseInt(e.target.value) || 0)}
-                                    className="text-xs"
+                                    className="text-sm"
                                   />
-                                </div>
-                              </div>
-                            ))}
-                          </div>
+                                </motion.div>
+                              )}
+                            </div>
+                          ))}
                         </div>
-                      </motion.div>
-                    ))}
-                  </div>
-                )}
+                      </div>
+                    </motion.div>
+                  ))}
 
-                {/* Tablo Oluştur Butonu */}
-                {selectedItems.length > 0 && (
+                  {/* Tablo Oluştur Butonu */}
                   <motion.div
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.6 }}
+                    transition={{ delay: 0.8 }}
                     className="pt-4"
                   >
                     <Button 
@@ -445,10 +549,10 @@ export default function CreateTablePage() {
                       Tablo Oluştur
                     </Button>
                   </motion.div>
-                )}
-              </CardContent>
-            </Card>
-          </motion.div>
+                </CardContent>
+              </Card>
+            </motion.div>
+          )}
         </div>
       </div>
     </div>
