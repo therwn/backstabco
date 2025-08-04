@@ -9,10 +9,10 @@ export function cn(...inputs: ClassValue[]) {
 export function formatCurrency(amount: number): string {
   return new Intl.NumberFormat('tr-TR', {
     style: 'currency',
-    currency: 'SILVER',
+    currency: 'TRY', // SILVER yerine TRY kullanıyoruz
     minimumFractionDigits: 0,
     maximumFractionDigits: 0
-  }).format(amount).replace('SILVER', '').trim() + ' gümüş'
+  }).format(amount).replace('TRY', '').trim() + ' gümüş'
 }
 
 // Input için para birimi formatı (sadece sayılar)
