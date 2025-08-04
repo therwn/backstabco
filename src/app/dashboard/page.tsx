@@ -17,7 +17,7 @@ interface Table {
   password: string | null
   creator: string
   createdAt: Date
-  itemCount: number
+  items: any[]
 }
 
 export default function DashboardPage() {
@@ -180,7 +180,7 @@ export default function DashboardPage() {
                         <div>
                           <div className="text-white font-medium">{table.name}</div>
                           <div className="text-gray-400 text-sm">
-                            {table.itemCount} item • {new Date(table.createdAt).toLocaleDateString('tr-TR')}
+                            {table.items.length} item • {new Date(table.createdAt).toLocaleDateString('tr-TR')}
                           </div>
                         </div>
                         <div className="flex items-center space-x-2">

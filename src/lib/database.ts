@@ -105,7 +105,7 @@ export async function getUserTables(userId: string): Promise<BlackMarketTable[]>
       password: row.password,
       creator: row.creator_name,
       createdAt: new Date(row.created_at),
-      items: []
+      items: [] // Boş items array'i
     }))
   } catch (error) {
     console.error('Kullanıcı tabloları getirilirken hata:', error)
@@ -124,29 +124,54 @@ export async function getTableDetails(tableId: string, userId: string): Promise<
       .eq('creator_id', userId)
       .single()
 
-    if (tableError || !tableData) return null
+    if (tableError || !tableData) {
+      console.error('Tablo bulunamadı:', tableError)
+      return null
+    }
 
     // Item'ları getir
     const { data: itemsData, error: itemsError } = await supabase
       .from('black_market_items')
-      .select(`
-        *,
-        city_prices (*)
-      `)
+      .select('*')
       .eq('table_id', tableId)
 
-    if (itemsError) throw itemsError
+    if (itemsError) {
+      console.error('Item\'lar getirilirken hata:', itemsError)
+      throw itemsError
+    }
 
-    const items: BlackMarketItem[] = itemsData.map(row => ({
-      id: row.item_id,
-      itemName: row.item_name,
-      itemTier: row.item_tier,
-      itemEnchantment: row.item_enchantment,
-      itemQuality: row.item_quality,
-      buyPrice: row.buy_price,
-      buyQuantity: row.buy_quantity,
-      cityPrices: row.city_prices || []
-    }))
+    // Her item için şehir fiyatlarını getir
+    const items: BlackMarketItem[] = []
+    for (const itemRow of itemsData) {
+      const { data: cityPricesData, error: cityPricesError } = await supabase
+        .from('city_prices')
+        .select('*')
+        .eq('item_id', itemRow.id)
+
+      if (cityPricesError) {
+        console.error('Şehir fiyatları getirilirken hata:', cityPricesError)
+        continue
+      }
+
+      const cityPrices = cityPricesData.map(cp => ({
+        city: cp.city,
+        sellOrder: cp.sell_order,
+        buyOrder: cp.buy_order,
+        quantity: cp.quantity,
+        quality: cp.quality
+      }))
+
+      items.push({
+        id: itemRow.item_id,
+        itemName: itemRow.item_name,
+        itemTier: itemRow.item_tier,
+        itemEnchantment: itemRow.item_enchantment,
+        itemQuality: itemRow.item_quality,
+        buyPrice: itemRow.buy_price,
+        buyQuantity: itemRow.buy_quantity,
+        cityPrices
+      })
+    }
 
     return {
       id: tableData.id.toString(),
