@@ -153,12 +153,7 @@ export default function CreateTablePage() {
       if (selectedItem.item.id === itemId) {
         return { 
           ...selectedItem, 
-          selectedTier: tier,
-          // Tier değişince item'ı da güncelle
-          item: {
-            ...selectedItem.item,
-            tier: tier
-          }
+          selectedTier: tier
         }
       }
       return selectedItem
@@ -171,12 +166,7 @@ export default function CreateTablePage() {
       if (selectedItem.item.id === itemId) {
         return { 
           ...selectedItem, 
-          selectedEnchantment: enchantment,
-          // Enchantment değişince item'ı da güncelle
-          item: {
-            ...selectedItem.item,
-            enchantment: enchantment
-          }
+          selectedEnchantment: enchantment
         }
       }
       return selectedItem
@@ -421,76 +411,78 @@ export default function CreateTablePage() {
                           initial={{ opacity: 0, scale: 0.95, y: 20 }}
                           animate={{ opacity: 1, scale: 1, y: 0 }}
                           exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                          className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-full max-w-5xl bg-black-800 border border-gray-600 rounded-lg shadow-2xl z-[9999]"
+                          className="fixed inset-0 flex items-center justify-center z-[9999]"
                         >
-                          <div className="p-6 border-b border-gray-600">
-                            <div className="flex items-center space-x-2">
-                              <Search className="w-5 h-5 text-gray-400" />
-                              <Input
-                                type="text"
-                                placeholder="Item adı yazın..."
-                                value={searchQuery}
-                                onChange={(e) => {
-                                  setSearchQuery(e.target.value)
-                                  if (e.target.value.trim()) {
-                                    handleSearch()
-                                  }
-                                }}
-                                className="flex-1 bg-transparent border-none focus:ring-0 text-white text-lg"
-                                autoFocus
-                              />
-                              {isSearching && (
-                                <div className="w-5 h-5 border-2 border-[#F3B22D] border-t-transparent rounded-full animate-spin"></div>
+                          <div className="w-full max-w-5xl mx-4 bg-black-800 border border-gray-600 rounded-lg shadow-2xl">
+                            <div className="p-6 border-b border-gray-600">
+                              <div className="flex items-center space-x-2">
+                                <Search className="w-5 h-5 text-gray-400" />
+                                <Input
+                                  type="text"
+                                  placeholder="Item adı yazın..."
+                                  value={searchQuery}
+                                  onChange={(e) => {
+                                    setSearchQuery(e.target.value)
+                                    if (e.target.value.trim()) {
+                                      handleSearch()
+                                    }
+                                  }}
+                                  className="flex-1 bg-transparent border-none focus:ring-0 text-white text-lg"
+                                  autoFocus
+                                />
+                                {isSearching && (
+                                  <div className="w-5 h-5 border-2 border-[#F3B22D] border-t-transparent rounded-full animate-spin"></div>
+                                )}
+                              </div>
+                            </div>
+
+                            <div className="max-h-96 overflow-y-auto">
+                              {isSearching ? (
+                                <div className="py-2">
+                                  {[...Array(5)].map((_, i) => (
+                                    <ItemSkeleton key={i} />
+                                  ))}
+                                </div>
+                              ) : searchResults.length > 0 ? (
+                                <div className="py-2">
+                                  {searchResults.map((item) => (
+                                    <motion.div
+                                      key={item.id}
+                                      className="flex items-center space-x-4 p-4 hover:bg-black-700 cursor-pointer"
+                                      whileHover={{ backgroundColor: '#374151' }}
+                                      onClick={() => handleItemSelect(item)}
+                                    >
+                                      <div className="w-16 h-16 rounded flex items-center justify-center">
+                                        <Image
+                                          src={getItemImageUrl(item.id)}
+                                          alt={item.name}
+                                          width={64}
+                                          height={64}
+                                          className="w-14 h-14"
+                                          onError={(e) => {
+                                            const target = e.target as HTMLImageElement
+                                            target.style.display = 'none'
+                                          }}
+                                        />
+                                      </div>
+                                      <div className="flex-1">
+                                        <div className="text-white font-medium text-lg">{item.name}</div>
+                                        <div className="text-gray-400 text-sm">T{item.tier} • {item.category}</div>
+                                      </div>
+                                      <Plus className="w-5 h-5 text-[#F3B22D]" />
+                                    </motion.div>
+                                  ))}
+                                </div>
+                              ) : searchQuery && !isSearching ? (
+                                <div className="p-6 text-center text-gray-400">
+                                  Sonuç bulunamadı
+                                </div>
+                              ) : (
+                                <div className="p-6 text-center text-gray-400">
+                                  Arama yapmak için yazmaya başlayın
+                                </div>
                               )}
                             </div>
-                          </div>
-
-                          <div className="max-h-96 overflow-y-auto">
-                            {isSearching ? (
-                              <div className="py-2">
-                                {[...Array(5)].map((_, i) => (
-                                  <ItemSkeleton key={i} />
-                                ))}
-                              </div>
-                            ) : searchResults.length > 0 ? (
-                              <div className="py-2">
-                                {searchResults.map((item) => (
-                                  <motion.div
-                                    key={item.id}
-                                    className="flex items-center space-x-4 p-4 hover:bg-black-700 cursor-pointer"
-                                    whileHover={{ backgroundColor: '#374151' }}
-                                    onClick={() => handleItemSelect(item)}
-                                  >
-                                    <div className="w-16 h-16 bg-gray-700 rounded flex items-center justify-center">
-                                      <Image
-                                        src={getItemImageUrl(item.id)}
-                                        alt={item.name}
-                                        width={64}
-                                        height={64}
-                                        className="w-14 h-14"
-                                        onError={(e) => {
-                                          const target = e.target as HTMLImageElement
-                                          target.style.display = 'none'
-                                        }}
-                                      />
-                                    </div>
-                                    <div className="flex-1">
-                                      <div className="text-white font-medium text-lg">{item.name}</div>
-                                      <div className="text-gray-400 text-sm">T{item.tier} • {item.category}</div>
-                                    </div>
-                                    <Plus className="w-5 h-5 text-[#F3B22D]" />
-                                  </motion.div>
-                                ))}
-                              </div>
-                            ) : searchQuery && !isSearching ? (
-                              <div className="p-6 text-center text-gray-400">
-                                Sonuç bulunamadı
-                              </div>
-                            ) : (
-                              <div className="p-6 text-center text-gray-400">
-                                Arama yapmak için yazmaya başlayın
-                              </div>
-                            )}
                           </div>
                         </motion.div>
                       </>
@@ -526,7 +518,7 @@ export default function CreateTablePage() {
                       {/* Item Header - Always Visible */}
                       <div className="flex items-center justify-between p-6">
                         <div className="flex items-center space-x-4">
-                          <div className="w-20 h-20 bg-gray-700 rounded flex items-center justify-center">
+                          <div className="w-20 h-20 rounded flex items-center justify-center">
                             <Image
                               src={getItemImageUrl(selectedItem.item.id, 1, selectedItem.selectedEnchantment)}
                               alt={selectedItem.item.name}
