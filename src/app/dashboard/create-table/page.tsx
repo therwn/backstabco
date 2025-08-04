@@ -59,15 +59,54 @@ export default function CreateTablePage() {
   }
 
   // Tablo oluştur
-  const createTable = () => {
+  const createTable = async () => {
     if (selectedItems.length === 0) {
       alert('En az bir item seçmelisiniz!')
       return
     }
-    
-    // TODO: Tablo oluşturma API'si
-    console.log('Creating table with items:', selectedItems)
-    alert('Tablo oluşturma özelliği yakında eklenecek!')
+
+    const tableName = prompt('Tablo adını girin:')
+    if (!tableName) return
+
+    const password = prompt('Şifre (opsiyonel):') || null
+
+    try {
+      // Item'ları BlackMarketItem formatına çevir
+      const blackMarketItems = selectedItems.map(item => ({
+        id: item.id,
+        itemName: item.name,
+        itemTier: item.tier,
+        itemEnchantment: 0, // Default
+        itemQuality: 1, // Default
+        buyPrice: 0, // Default
+        buyQuantity: 1, // Default
+        cityPrices: [] // Boş array
+      }))
+
+      const response = await fetch('/api/tables', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: tableName,
+          password,
+          items: blackMarketItems
+        })
+      })
+
+      const result = await response.json()
+
+      if (result.success) {
+        alert('Tablo başarıyla oluşturuldu!')
+        router.push('/dashboard')
+      } else {
+        alert('Tablo oluşturulurken hata: ' + result.error)
+      }
+    } catch (error) {
+      console.error('Tablo oluşturma hatası:', error)
+      alert('Tablo oluşturulurken bir hata oluştu.')
+    }
   }
 
   return (

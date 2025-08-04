@@ -1,18 +1,70 @@
 'use client'
 
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { Plus, LogOut } from 'lucide-react'
+import { Plus, LogOut, Eye, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { motion } from 'motion/react'
-import { signOut } from 'next-auth/react'
+import { signOut, useSession } from 'next-auth/react'
 import Logo from '@/assets/logo.svg'
 import Image from 'next/image'
 import MusicPlayer from '@/components/MusicPlayer'
 
+interface Table {
+  id: string
+  name: string
+  password: string | null
+  creator: string
+  createdAt: Date
+  itemCount: number
+}
+
 export default function DashboardPage() {
+  const { data: session } = useSession()
+  const [tables, setTables] = useState<Table[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+
+  useEffect(() => {
+    fetchTables()
+  }, [])
+
+  const fetchTables = async () => {
+    try {
+      const response = await fetch('/api/tables')
+      if (response.ok) {
+        const data = await response.json()
+        setTables(data)
+      }
+    } catch (error) {
+      console.error('Tablolar getirilirken hata:', error)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
   const handleLogout = () => {
     signOut({ callbackUrl: '/auth' })
+  }
+
+  const deleteTable = async (tableId: string) => {
+    if (!confirm('Bu tabloyu silmek istediğinizden emin misiniz?')) return
+
+    try {
+      const response = await fetch(`/api/tables/${tableId}`, {
+        method: 'DELETE'
+      })
+
+      if (response.ok) {
+        setTables(prev => prev.filter(table => table.id !== tableId))
+        alert('Tablo başarıyla silindi!')
+      } else {
+        alert('Tablo silinirken hata oluştu!')
+      }
+    } catch (error) {
+      console.error('Tablo silme hatası:', error)
+      alert('Tablo silinirken bir hata oluştu!')
+    }
   }
 
   return (
@@ -103,50 +155,52 @@ export default function DashboardPage() {
           >
             <Card className="card-glass">
               <CardHeader>
-                <CardTitle className="text-white">Aktif Tablolar</CardTitle>
+                <CardTitle className="text-white">Aktif Tablolar ({tables.length})</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-3">
-                  <motion.div 
-                    className="flex items-center justify-between p-3 bg-black-700 rounded-lg hover:bg-black-600 transition-colors cursor-pointer"
-                    whileHover={{ scale: 1.02, x: 5 }}
-                    whileTap={{ scale: 0.98 }}
-                  >
-                    <div>
-                      <div className="text-white font-medium">Black Market T8</div>
-                      <div className="text-gray-400 text-sm">5 item • 2 saat önce</div>
-                    </div>
-                    <Button size="sm" variant="outline" className="text-white border-white hover:bg-white hover:text-black-900">
-                      Görüntüle
-                    </Button>
-                  </motion.div>
-                  <motion.div 
-                    className="flex items-center justify-between p-3 bg-black-700 rounded-lg hover:bg-black-600 transition-colors cursor-pointer"
-                    whileHover={{ scale: 1.02, x: 5 }}
-                    whileTap={{ scale: 0.98 }}
-                  >
-                    <div>
-                      <div className="text-white font-medium">Materials T6</div>
-                      <div className="text-gray-400 text-sm">12 item • 6 saat önce</div>
-                    </div>
-                    <Button size="sm" variant="outline" className="text-white border-white hover:bg-white hover:text-black-900">
-                      Görüntüle
-                    </Button>
-                  </motion.div>
-                  <motion.div 
-                    className="flex items-center justify-between p-3 bg-black-700 rounded-lg hover:bg-black-600 transition-colors cursor-pointer"
-                    whileHover={{ scale: 1.02, x: 5 }}
-                    whileTap={{ scale: 0.98 }}
-                  >
-                    <div>
-                      <div className="text-white font-medium">Weapons T4-T6</div>
-                      <div className="text-gray-400 text-sm">8 item • 1 gün önce</div>
-                    </div>
-                    <Button size="sm" variant="outline" className="text-white border-white hover:bg-white hover:text-black-900">
-                      Görüntüle
-                    </Button>
-                  </motion.div>
-                </div>
+                {isLoading ? (
+                  <div className="text-center py-8">
+                    <div className="w-8 h-8 border-2 border-[#F3B22D] border-t-transparent rounded-full animate-spin mx-auto"></div>
+                    <p className="text-gray-400 mt-2">Tablolar yükleniyor...</p>
+                  </div>
+                ) : tables.length === 0 ? (
+                  <div className="text-center py-8">
+                    <p className="text-gray-400">Henüz tablo oluşturmadınız</p>
+                    <p className="text-gray-500 text-sm">Yeni tablo oluşturmak için yukarıdaki butonu kullanın</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {tables.map((table) => (
+                      <motion.div
+                        key={table.id}
+                        className="flex items-center justify-between p-3 bg-black-700 rounded-lg hover:bg-black-600 transition-colors"
+                        whileHover={{ scale: 1.02, x: 5 }}
+                        whileTap={{ scale: 0.98 }}
+                      >
+                        <div>
+                          <div className="text-white font-medium">{table.name}</div>
+                          <div className="text-gray-400 text-sm">
+                            {table.itemCount} item • {new Date(table.createdAt).toLocaleDateString('tr-TR')}
+                          </div>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <Button size="sm" variant="outline" className="text-white border-white hover:bg-white hover:text-black-900">
+                            <Eye className="w-4 h-4 mr-1" />
+                            Görüntüle
+                          </Button>
+                          <Button 
+                            size="sm" 
+                            variant="outline" 
+                            className="text-red-400 border-red-400 hover:bg-red-400 hover:text-white"
+                            onClick={() => deleteTable(table.id)}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </motion.div>
+                    ))}
+                  </div>
+                )}
               </CardContent>
             </Card>
           </motion.div>
