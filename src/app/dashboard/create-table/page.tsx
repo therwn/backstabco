@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Search, ShoppingCart, Plus, Trash2, Edit, Save, X, Calendar, User, MapPin, DollarSign, Package } from 'lucide-react'
+import { Search, ShoppingCart, Plus, Trash2, Edit, Save, X, Calendar, User, MapPin, DollarSign, Package, Eye, EyeOff } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -26,7 +26,19 @@ interface SelectedItem {
     buyOrder: number
     quantity: number
   }[]
+  isEditing: boolean
 }
+
+// Skeleton Loading Component
+const ItemSkeleton = () => (
+  <div className="flex items-center space-x-3 p-3">
+    <div className="w-8 h-8 bg-gray-700 rounded animate-pulse"></div>
+    <div className="flex-1">
+      <div className="h-4 bg-gray-700 rounded animate-pulse mb-2"></div>
+      <div className="h-3 bg-gray-700 rounded animate-pulse w-2/3"></div>
+    </div>
+  </div>
+)
 
 export default function CreateTablePage() {
   const router = useRouter()
@@ -39,6 +51,7 @@ export default function CreateTablePage() {
   const [selectedItems, setSelectedItems] = useState<SelectedItem[]>([])
   const [isSearching, setIsSearching] = useState(false)
   const [showSearchModal, setShowSearchModal] = useState(false)
+  const [globalBuySwitch, setGlobalBuySwitch] = useState(false)
 
   // Click outside to close search modal
   useEffect(() => {
@@ -82,7 +95,8 @@ export default function CreateTablePage() {
         sellOrder: 0,
         buyOrder: 0,
         quantity: 0
-      }))
+      })),
+      isEditing: false
     }
     
     setSelectedItems(prev => [...prev, newSelectedItem])
@@ -94,6 +108,26 @@ export default function CreateTablePage() {
   // Seçili item'ı kaldır
   const removeItem = (itemId: string) => {
     setSelectedItems(prev => prev.filter(selectedItem => selectedItem.item.id !== itemId))
+  }
+
+  // Item'ı düzenleme moduna al
+  const editItem = (itemId: string) => {
+    setSelectedItems(prev => prev.map(selectedItem => {
+      if (selectedItem.item.id === itemId) {
+        return { ...selectedItem, isEditing: true }
+      }
+      return selectedItem
+    }))
+  }
+
+  // Item'ı kaydet
+  const saveItem = (itemId: string) => {
+    setSelectedItems(prev => prev.map(selectedItem => {
+      if (selectedItem.item.id === itemId) {
+        return { ...selectedItem, isEditing: false }
+      }
+      return selectedItem
+    }))
   }
 
   // Black Market bilgilerini güncelle
@@ -112,7 +146,7 @@ export default function CreateTablePage() {
     }))
   }
 
-  // Şehir switch'ini toggle et
+  // Şehir toggle et
   const toggleCity = (itemId: string, city: AlbionCity) => {
     setSelectedItems(prev => prev.map(selectedItem => {
       if (selectedItem.item.id === itemId) {
@@ -313,82 +347,100 @@ export default function CreateTablePage() {
                     onClick={() => setShowSearchModal(true)}
                   >
                     <Search className="w-4 h-4 mr-2 text-gray-400" />
-                    <span className="text-gray-400">Item arayın... (macOS Finder tarzı)</span>
+                    <span className="text-gray-400">Item arayın...</span>
                   </Button>
 
-                  {/* macOS Finder Style Search Modal */}
+                  {/* Search Modal with Backdrop */}
                   <AnimatePresence>
                     {showSearchModal && (
-                      <motion.div
-                        initial={{ opacity: 0, scale: 0.95 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        exit={{ opacity: 0, scale: 0.95 }}
-                        className="absolute top-full left-0 right-0 mt-2 bg-black-800 border border-gray-600 rounded-lg shadow-2xl z-50"
-                      >
-                        <div className="p-4 border-b border-gray-600">
-                          <div className="flex items-center space-x-2">
-                            <Search className="w-4 h-4 text-gray-400" />
-                            <Input
-                              type="text"
-                              placeholder="Item adı yazın..."
-                              value={searchQuery}
-                              onChange={(e) => {
-                                setSearchQuery(e.target.value)
-                                if (e.target.value.trim()) {
-                                  handleSearch()
-                                }
-                              }}
-                              className="flex-1 bg-transparent border-none focus:ring-0 text-white"
-                              autoFocus
-                            />
-                            {isSearching && (
-                              <div className="w-4 h-4 border-2 border-[#F3B22D] border-t-transparent rounded-full animate-spin"></div>
+                      <>
+                        {/* Backdrop */}
+                        <motion.div
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          exit={{ opacity: 0 }}
+                          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40"
+                          onClick={() => setShowSearchModal(false)}
+                        />
+                        
+                        {/* Modal */}
+                        <motion.div
+                          initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                          animate={{ opacity: 1, scale: 1, y: 0 }}
+                          exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                          className="absolute top-full left-0 right-0 mt-2 bg-black-800 border border-gray-600 rounded-lg shadow-2xl z-50"
+                        >
+                          <div className="p-4 border-b border-gray-600">
+                            <div className="flex items-center space-x-2">
+                              <Search className="w-4 h-4 text-gray-400" />
+                              <Input
+                                type="text"
+                                placeholder="Item adı yazın..."
+                                value={searchQuery}
+                                onChange={(e) => {
+                                  setSearchQuery(e.target.value)
+                                  if (e.target.value.trim()) {
+                                    handleSearch()
+                                  }
+                                }}
+                                className="flex-1 bg-transparent border-none focus:ring-0 text-white"
+                                autoFocus
+                              />
+                              {isSearching && (
+                                <div className="w-4 h-4 border-2 border-[#F3B22D] border-t-transparent rounded-full animate-spin"></div>
+                              )}
+                            </div>
+                          </div>
+
+                          <div className="max-h-80 overflow-y-auto">
+                            {isSearching ? (
+                              <div className="py-2">
+                                {[...Array(5)].map((_, i) => (
+                                  <ItemSkeleton key={i} />
+                                ))}
+                              </div>
+                            ) : searchResults.length > 0 ? (
+                              <div className="py-2">
+                                {searchResults.map((item) => (
+                                  <motion.div
+                                    key={item.id}
+                                    className="flex items-center space-x-3 p-3 hover:bg-black-700 cursor-pointer"
+                                    whileHover={{ backgroundColor: '#374151' }}
+                                    onClick={() => handleItemSelect(item)}
+                                  >
+                                    <div className="w-8 h-8 bg-gray-700 rounded flex items-center justify-center">
+                                      <Image
+                                        src={getItemImageUrl(item.id)}
+                                        alt={item.name}
+                                        width={24}
+                                        height={24}
+                                        className="w-6 h-6"
+                                        onError={(e) => {
+                                          const target = e.target as HTMLImageElement
+                                          target.style.display = 'none'
+                                        }}
+                                      />
+                                    </div>
+                                    <div className="flex-1">
+                                      <div className="text-white font-medium">{item.name}</div>
+                                      <div className="text-gray-400 text-sm">T{item.tier} • {item.category}</div>
+                                    </div>
+                                    <Plus className="w-4 h-4 text-[#F3B22D]" />
+                                  </motion.div>
+                                ))}
+                              </div>
+                            ) : searchQuery && !isSearching ? (
+                              <div className="p-4 text-center text-gray-400">
+                                Sonuç bulunamadı
+                              </div>
+                            ) : (
+                              <div className="p-4 text-center text-gray-400">
+                                Arama yapmak için yazmaya başlayın
+                              </div>
                             )}
                           </div>
-                        </div>
-
-                        <div className="max-h-80 overflow-y-auto">
-                          {searchResults.length > 0 ? (
-                            <div className="py-2">
-                              {searchResults.map((item) => (
-                                <motion.div
-                                  key={item.id}
-                                  className="flex items-center space-x-3 p-3 hover:bg-black-700 cursor-pointer"
-                                  whileHover={{ backgroundColor: '#374151' }}
-                                  onClick={() => handleItemSelect(item)}
-                                >
-                                  <div className="w-8 h-8 bg-gray-700 rounded flex items-center justify-center">
-                                    <Image
-                                      src={getItemImageUrl(item.id)}
-                                      alt={item.name}
-                                      width={24}
-                                      height={24}
-                                      className="w-6 h-6"
-                                      onError={(e) => {
-                                        const target = e.target as HTMLImageElement
-                                        target.style.display = 'none'
-                                      }}
-                                    />
-                                  </div>
-                                  <div className="flex-1">
-                                    <div className="text-white font-medium">{item.name}</div>
-                                    <div className="text-gray-400 text-sm">T{item.tier} • {item.category}</div>
-                                  </div>
-                                  <Plus className="w-4 h-4 text-[#F3B22D]" />
-                                </motion.div>
-                              ))}
-                            </div>
-                          ) : searchQuery && !isSearching ? (
-                            <div className="p-4 text-center text-gray-400">
-                              Sonuç bulunamadı
-                            </div>
-                          ) : (
-                            <div className="p-4 text-center text-gray-400">
-                              Arama yapmak için yazmaya başlayın
-                            </div>
-                          )}
-                        </div>
-                      </motion.div>
+                        </motion.div>
+                      </>
                     )}
                   </AnimatePresence>
                 </div>
@@ -439,14 +491,35 @@ export default function CreateTablePage() {
                             <div className="text-gray-400 text-sm">T{selectedItem.item.tier} • {selectedItem.item.category}</div>
                           </div>
                         </div>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => removeItem(selectedItem.item.id)}
-                          className="text-red-400 border-red-400 hover:bg-red-400 hover:text-white"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
+                        <div className="flex items-center space-x-2">
+                          {selectedItem.isEditing ? (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => saveItem(selectedItem.item.id)}
+                              className="text-green-400 border-green-400 hover:bg-green-400 hover:text-white"
+                            >
+                              <Save className="w-4 h-4" />
+                            </Button>
+                          ) : (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => editItem(selectedItem.item.id)}
+                              className="text-blue-400 border-blue-400 hover:bg-blue-400 hover:text-white"
+                            >
+                              <Edit className="w-4 h-4" />
+                            </Button>
+                          )}
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => removeItem(selectedItem.item.id)}
+                            className="text-red-400 border-red-400 hover:bg-red-400 hover:text-white"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
                       </div>
 
                       {/* Black Market Section */}
@@ -463,6 +536,7 @@ export default function CreateTablePage() {
                               placeholder="0"
                               value={selectedItem.blackMarket.buyPrice}
                               onChange={(e) => updateBlackMarket(selectedItem.item.id, 'buyPrice', parseInt(e.target.value) || 0)}
+                              disabled={!selectedItem.isEditing}
                             />
                           </div>
                           <div>
@@ -472,8 +546,20 @@ export default function CreateTablePage() {
                               placeholder="1"
                               value={selectedItem.blackMarket.buyQuantity}
                               onChange={(e) => updateBlackMarket(selectedItem.item.id, 'buyQuantity', parseInt(e.target.value) || 1)}
+                              disabled={!selectedItem.isEditing}
                             />
                           </div>
+                        </div>
+                      </div>
+
+                      {/* Global Buy Switch */}
+                      <div className="mb-6">
+                        <div className="flex items-center space-x-2 mb-4">
+                          <Switch
+                            checked={globalBuySwitch}
+                            onCheckedChange={setGlobalBuySwitch}
+                          />
+                          <span className="text-white text-sm">Tüm şehirlerde alış fiyatı göster</span>
                         </div>
                       </div>
 
@@ -483,72 +569,102 @@ export default function CreateTablePage() {
                           <MapPin className="w-5 h-5 text-[#F3B22D]" />
                           <h3 className="text-white font-medium">Şehir Fiyatları</h3>
                         </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2">
                           {selectedItem.cityPrices.map((cityPrice) => (
-                            <div key={cityPrice.city} className="border border-gray-600 rounded-lg p-4">
-                              <div className="flex items-center justify-between mb-3">
-                                <div className="flex items-center space-x-2">
-                                  <MapPin className="w-4 h-4 text-gray-400" />
-                                  <span className="text-white font-medium text-sm">{cityPrice.city}</span>
+                            <Button
+                              key={cityPrice.city}
+                              variant={cityPrice.enabled ? "default" : "outline"}
+                              size="sm"
+                              onClick={() => toggleCity(selectedItem.item.id, cityPrice.city)}
+                              className={`text-xs ${cityPrice.enabled ? 'bg-[#F3B22D] text-black' : 'text-white border-gray-600 hover:bg-gray-700'}`}
+                            >
+                              {cityPrice.city}
+                            </Button>
+                          ))}
+                        </div>
+                        
+                        {/* Enabled Cities */}
+                        {selectedItem.cityPrices.filter(cp => cp.enabled).length > 0 && (
+                          <div className="mt-4 space-y-3">
+                            {selectedItem.cityPrices.filter(cp => cp.enabled).map((cityPrice) => (
+                              <motion.div
+                                key={cityPrice.city}
+                                initial={{ opacity: 0, height: 0 }}
+                                animate={{ opacity: 1, height: 'auto' }}
+                                exit={{ opacity: 0, height: 0 }}
+                                className="border border-gray-600 rounded-lg p-4"
+                              >
+                                <div className="flex items-center justify-between mb-3">
+                                  <div className="flex items-center space-x-2">
+                                    <MapPin className="w-4 h-4 text-gray-400" />
+                                    <span className="text-white font-medium">{cityPrice.city}</span>
+                                  </div>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => toggleCity(selectedItem.item.id, cityPrice.city)}
+                                    className="text-red-400 border-red-400 hover:bg-red-400 hover:text-white"
+                                  >
+                                    <X className="w-4 h-4" />
+                                  </Button>
                                 </div>
-                                <Switch
-                                  checked={cityPrice.enabled}
-                                  onCheckedChange={() => toggleCity(selectedItem.item.id, cityPrice.city)}
-                                />
-                              </div>
-                              
-                              {cityPrice.enabled && (
-                                <motion.div
-                                  initial={{ opacity: 0, height: 0 }}
-                                  animate={{ opacity: 1, height: 'auto' }}
-                                  exit={{ opacity: 0, height: 0 }}
-                                  className="space-y-3"
-                                >
+                                
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                                   <Input
                                     type="number"
-                                    placeholder="Satış Siparişi"
+                                    placeholder="Satış Fiyatı"
                                     value={cityPrice.sellOrder}
                                     onChange={(e) => updateCityPrice(selectedItem.item.id, cityPrice.city, 'sellOrder', parseInt(e.target.value) || 0)}
                                     className="text-sm"
+                                    disabled={!selectedItem.isEditing}
                                   />
-                                  <Input
-                                    type="number"
-                                    placeholder="Alış Siparişi"
-                                    value={cityPrice.buyOrder}
-                                    onChange={(e) => updateCityPrice(selectedItem.item.id, cityPrice.city, 'buyOrder', parseInt(e.target.value) || 0)}
-                                    className="text-sm"
-                                  />
-                                  <Input
-                                    type="number"
-                                    placeholder="Miktar"
-                                    value={cityPrice.quantity}
-                                    onChange={(e) => updateCityPrice(selectedItem.item.id, cityPrice.city, 'quantity', parseInt(e.target.value) || 0)}
-                                    className="text-sm"
-                                  />
-                                </motion.div>
-                              )}
-                            </div>
-                          ))}
-                        </div>
+                                  {globalBuySwitch && (
+                                    <>
+                                      <Input
+                                        type="number"
+                                        placeholder="Alış Fiyatı"
+                                        value={cityPrice.buyOrder}
+                                        onChange={(e) => updateCityPrice(selectedItem.item.id, cityPrice.city, 'buyOrder', parseInt(e.target.value) || 0)}
+                                        className="text-sm"
+                                        disabled={!selectedItem.isEditing}
+                                      />
+                                      <Input
+                                        type="number"
+                                        placeholder="Miktar"
+                                        value={cityPrice.quantity}
+                                        onChange={(e) => updateCityPrice(selectedItem.item.id, cityPrice.city, 'quantity', parseInt(e.target.value) || 0)}
+                                        className="text-sm"
+                                        disabled={!selectedItem.isEditing}
+                                      />
+                                    </>
+                                  )}
+                                </div>
+                              </motion.div>
+                            ))}
+                          </div>
+                        )}
                       </div>
                     </motion.div>
                   ))}
 
-                  {/* Tablo Oluştur Butonu */}
-                  <motion.div
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.8 }}
-                    className="pt-4"
-                  >
+                  {/* Action Buttons */}
+                  <div className="flex items-center space-x-4 pt-4">
                     <Button 
-                      className="w-full btn-primary"
+                      className="btn-primary"
                       onClick={createTable}
                     >
                       <Save className="w-4 h-4 mr-2" />
                       Tablo Oluştur
                     </Button>
-                  </motion.div>
+                    <Button 
+                      variant="outline"
+                      className="text-white border-white hover:bg-white hover:text-black-900"
+                      onClick={() => setShowSearchModal(true)}
+                    >
+                      <Plus className="w-4 h-4 mr-2" />
+                      Item Ekle
+                    </Button>
+                  </div>
                 </CardContent>
               </Card>
             </motion.div>
