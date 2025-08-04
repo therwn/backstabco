@@ -1,0 +1,1 @@
+https://github.com/ao-data/ao-bin-dumps/blob/master/formatted/world.txt
