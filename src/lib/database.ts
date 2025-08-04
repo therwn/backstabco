@@ -203,8 +203,13 @@ export async function getTableDetails(tableId: string): Promise<BlackMarketTable
 
     console.log('DB: Table query result:', tableData ? 'found' : 'not found', 'error:', tableError)
 
-    if (tableError || !tableData) {
-      console.error('Error fetching table:', tableError)
+    if (tableError) {
+      console.error('DB: Table query error:', tableError)
+      return null
+    }
+
+    if (!tableData) {
+      console.log('DB: Table not found')
       return null
     }
 
@@ -219,38 +224,72 @@ export async function getTableDetails(tableId: string): Promise<BlackMarketTable
     console.log('DB: Items query result:', itemsData?.length || 0, 'items, error:', itemsError)
 
     if (itemsError) {
-      console.error('Error fetching items:', itemsError)
-      throw itemsError
+      console.error('DB: Items query error:', itemsError)
+      // Item'lar olmasa bile tabloyu döndür
+      const result = {
+        id: tableData.id,
+        name: tableData.name,
+        password: tableData.password,
+        creator: tableData.creator_id,
+        createdAt: tableData.created_at,
+        items: []
+      }
+      console.log('DB: Returning table without items:', result)
+      return result
     }
 
     // Her item için city price'ları al
     const itemsWithCityPrices = await Promise.all(
       itemsData.map(async (item) => {
-        const { data: cityPricesData, error: cityPricesError } = await supabase
-          .from('city_prices')
-          .select('*')
-          .eq('table_id', tableId)
-          .eq('item_id', item.item_id)
+        try {
+          const { data: cityPricesData, error: cityPricesError } = await supabase
+            .from('city_prices')
+            .select('*')
+            .eq('table_id', tableId)
+            .eq('item_id', item.item_id)
 
-        if (cityPricesError) {
-          console.error('Error fetching city prices:', cityPricesError)
-          throw cityPricesError
-        }
+          if (cityPricesError) {
+            console.error('DB: City prices query error for item', item.item_id, ':', cityPricesError)
+            // City prices olmasa bile item'ı döndür
+            return {
+              id: item.item_id,
+              itemName: item.item_name,
+              itemTier: item.item_tier,
+              itemEnchantment: item.item_enchantment,
+              itemQuality: item.item_quality,
+              buyPrice: item.buy_price,
+              buyQuantity: item.buy_quantity,
+              cityPrices: []
+            }
+          }
 
-        return {
-          id: item.item_id,
-          itemName: item.item_name,
-          itemTier: item.item_tier,
-          itemEnchantment: item.item_enchantment,
-          itemQuality: item.item_quality,
-          buyPrice: item.buy_price,
-          buyQuantity: item.buy_quantity,
-          cityPrices: cityPricesData.map(cp => ({
-            city: cp.city,
-            sellOrder: cp.sell_order,
-            buyOrder: cp.buy_order,
-            quantity: cp.quantity
-          }))
+          return {
+            id: item.item_id,
+            itemName: item.item_name,
+            itemTier: item.item_tier,
+            itemEnchantment: item.item_enchantment,
+            itemQuality: item.item_quality,
+            buyPrice: item.buy_price,
+            buyQuantity: item.buy_quantity,
+            cityPrices: cityPricesData.map(cp => ({
+              city: cp.city,
+              sellOrder: cp.sell_order,
+              buyOrder: cp.buy_order,
+              quantity: cp.quantity
+            }))
+          }
+        } catch (itemError) {
+          console.error('DB: Error processing item', item.item_id, ':', itemError)
+          return {
+            id: item.item_id,
+            itemName: item.item_name,
+            itemTier: item.item_tier,
+            itemEnchantment: item.item_enchantment,
+            itemQuality: item.item_quality,
+            buyPrice: item.buy_price,
+            buyQuantity: item.buy_quantity,
+            cityPrices: []
+          }
         }
       })
     )
@@ -267,7 +306,7 @@ export async function getTableDetails(tableId: string): Promise<BlackMarketTable
     console.log('DB: Returning table details:', result)
     return result
   } catch (error) {
-    console.error('Error in getTableDetails:', error)
+    console.error('DB: Error in getTableDetails:', error)
     throw error
   }
 }
