@@ -204,6 +204,63 @@ export default function TableViewPage() {
     })
   }
 
+  const removeItem = (itemId: string) => {
+    if (!editData) return
+    setEditData({
+      ...editData,
+      items: editData.items.filter(item => item.id !== itemId)
+    })
+  }
+
+  const addItem = () => {
+    if (!editData) return
+    const newItem: TableItem = {
+      id: `new-item-${Date.now()}`,
+      itemName: 'Yeni Item',
+      itemTier: 6,
+      itemEnchantment: 0,
+      itemQuality: 1,
+      buyPrice: 0,
+      buyQuantity: 0,
+      cityPrices: []
+    }
+    setEditData({
+      ...editData,
+      items: [...editData.items, newItem]
+    })
+  }
+
+  const addCityToItem = (itemId: string) => {
+    if (!editData) return
+    setEditData({
+      ...editData,
+      items: editData.items.map(item => 
+        item.id === itemId ? {
+          ...item,
+          cityPrices: [...item.cityPrices, {
+            city: 'Bridgewatch',
+            sellOrder: 0,
+            buyOrder: 0,
+            quantity: 0
+          }]
+        } : item
+      )
+    })
+  }
+
+  const removeCityFromItem = (itemId: string, cityIndex: number) => {
+    if (!editData) return
+    setEditData({
+      ...editData,
+      items: editData.items.map(item => 
+        item.id === itemId ? {
+          ...item,
+          cityPrices: item.cityPrices.filter((_, index) => index !== cityIndex)
+        } : item
+      )
+    })
+  }
+
   const deleteTable = async () => {
     if (!table || !confirm('Bu tabloyu silmek istediğinizden emin misiniz?')) return
 
@@ -397,6 +454,13 @@ export default function TableViewPage() {
               <Trash2 className="w-4 h-4 mr-2" />
               Sil
             </Button>
+            <Button 
+              variant="outline" 
+              className="text-gray-400 border-gray-400 hover:bg-gray-400 hover:text-white"
+              onClick={() => router.push('/dashboard')}
+            >
+              Çıkış Yap
+            </Button>
           </div>
         </motion.div>
       </div>
@@ -419,7 +483,9 @@ export default function TableViewPage() {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
                     <div className="text-gray-400 text-sm">Oluşturan</div>
-                    <div className="text-white font-medium">{currentData.creator}</div>
+                    <div className="text-white font-medium">
+                      {currentData.creator.includes('#') ? currentData.creator : `${currentData.creator}#0000`}
+                    </div>
                   </div>
                   <div>
                     <div className="text-gray-400 text-sm">Oluşturulma Tarihi</div>
@@ -454,7 +520,17 @@ export default function TableViewPage() {
           >
             <Card className="card-glass">
               <CardHeader>
-                <CardTitle className="text-white">Item'lar ({currentData.items.length})</CardTitle>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-white">Item'lar ({currentData.items.length})</CardTitle>
+                  {isEditing && (
+                    <Button
+                      onClick={addItem}
+                      className="text-blue-400 border-blue-400 hover:bg-blue-400 hover:text-white"
+                    >
+                      + Item Ekle
+                    </Button>
+                  )}
+                </div>
               </CardHeader>
               <CardContent className="space-y-4">
                 {currentData.items.map((item, index) => (
@@ -479,12 +555,50 @@ export default function TableViewPage() {
                           }}
                         />
                       </div>
-                      <div>
+                      <div className="flex-1">
                         <div className="text-white font-medium text-lg">{item.itemName}</div>
-                        <div className="text-gray-400 text-sm">
-                          T{item.itemTier} • +{item.itemEnchantment} • {item.itemQuality} kalite
-                        </div>
+                        {isEditing ? (
+                          <div className="flex items-center space-x-2 mt-2">
+                            <div className="flex items-center space-x-2">
+                              <span className="text-gray-400 text-sm">Tier:</span>
+                              <select
+                                value={item.itemTier}
+                                onChange={(e) => updateItem(item.id, 'itemTier', parseInt(e.target.value))}
+                                className="bg-gray-700 text-white text-sm rounded px-2 py-1 border border-gray-600"
+                              >
+                                {[4, 5, 6, 7, 8].map(tier => (
+                                  <option key={tier} value={tier}>T{tier}</option>
+                                ))}
+                              </select>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <span className="text-gray-400 text-sm">Enchant:</span>
+                              <select
+                                value={item.itemEnchantment}
+                                onChange={(e) => updateItem(item.id, 'itemEnchantment', parseInt(e.target.value))}
+                                className="bg-gray-700 text-white text-sm rounded px-2 py-1 border border-gray-600"
+                              >
+                                {[0, 1, 2, 3].map(enchant => (
+                                  <option key={enchant} value={enchant}>+{enchant}</option>
+                                ))}
+                              </select>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="text-gray-400 text-sm">
+                            T{item.itemTier} • +{item.itemEnchantment} • {item.itemQuality} kalite
+                          </div>
+                        )}
                       </div>
+                      {isEditing && (
+                        <Button
+                          variant="outline"
+                          className="text-red-400 border-red-400 hover:bg-red-400 hover:text-white"
+                          onClick={() => removeItem(item.id)}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      )}
                     </div>
 
                     {/* Black Market Info */}
@@ -523,62 +637,92 @@ export default function TableViewPage() {
                     </div>
 
                     {/* City Prices */}
-                    {item.cityPrices.length > 0 && (
-                      <div>
-                        <div className="text-gray-400 text-sm mb-2">Şehir Fiyatları</div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                          {item.cityPrices.map((cityPrice, cityIndex) => (
-                            <div key={cityIndex} className="border border-gray-600 rounded p-3">
-                              <div className="text-white font-medium mb-2">{cityPrice.city}</div>
-                              <div className="space-y-2">
-                                <div>
-                                  <div className="text-gray-400 text-xs mb-1">Satış Fiyatı (silver)</div>
-                                  {isEditing ? (
-                                    <Input
-                                      type="text"
-                                      value={formatCurrencyInput(cityPrice.sellOrder.toString())}
-                                      onChange={(e) => updateCityPrice(item.id, cityIndex, 'sellOrder', parseCurrencyInput(e.target.value))}
-                                      className="text-xs"
-                                      placeholder="0"
-                                    />
-                                  ) : (
-                                    <span className="text-white text-sm">{formatCurrency(cityPrice.sellOrder)}</span>
-                                  )}
-                                </div>
-                                <div>
-                                  <div className="text-gray-400 text-xs mb-1">Alış Fiyatı (silver)</div>
-                                  {isEditing ? (
-                                    <Input
-                                      type="text"
-                                      value={formatCurrencyInput(cityPrice.buyOrder.toString())}
-                                      onChange={(e) => updateCityPrice(item.id, cityIndex, 'buyOrder', parseCurrencyInput(e.target.value))}
-                                      className="text-xs"
-                                      placeholder="0"
-                                    />
-                                  ) : (
-                                    <span className="text-white text-sm">{formatCurrency(cityPrice.buyOrder)}</span>
-                                  )}
-                                </div>
-                                <div>
-                                  <div className="text-gray-400 text-xs mb-1">Miktar</div>
-                                  {isEditing ? (
-                                    <Input
-                                      type="number"
-                                      value={cityPrice.quantity}
-                                      onChange={(e) => updateCityPrice(item.id, cityIndex, 'quantity', parseInt(e.target.value) || 0)}
-                                      className="text-xs"
-                                      placeholder="0"
-                                    />
-                                  ) : (
-                                    <span className="text-white text-sm">{cityPrice.quantity}</span>
-                                  )}
-                                </div>
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="text-gray-400 text-sm">Şehir Fiyatları</div>
+                        {isEditing && (
+                          <Button
+                            onClick={() => addCityToItem(item.id)}
+                            className="text-blue-400 border-blue-400 hover:bg-blue-400 hover:text-white text-xs"
+                          >
+                            + Şehir Ekle
+                          </Button>
+                        )}
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                        {item.cityPrices.map((cityPrice, cityIndex) => (
+                          <div key={cityIndex} className="border border-gray-600 rounded p-3 relative">
+                            {isEditing && (
+                              <Button
+                                onClick={() => removeCityFromItem(item.id, cityIndex)}
+                                className="absolute -top-2 -right-2 w-6 h-6 p-0 text-red-400 border-red-400 hover:bg-red-400 hover:text-white"
+                              >
+                                <X className="w-3 h-3" />
+                              </Button>
+                            )}
+                            <div className="text-white font-medium mb-2">
+                              {isEditing ? (
+                                <select
+                                  value={cityPrice.city}
+                                  onChange={(e) => updateCityPrice(item.id, cityIndex, 'city', e.target.value)}
+                                  className="bg-gray-700 text-white text-sm rounded px-2 py-1 border border-gray-600 w-full"
+                                >
+                                  {['Bridgewatch', 'Martlock', 'Thetford', 'Fort Sterling', 'Lymhurst', 'Caerleon'].map(city => (
+                                    <option key={city} value={city}>{city}</option>
+                                  ))}
+                                </select>
+                              ) : (
+                                cityPrice.city
+                              )}
+                            </div>
+                            <div className="space-y-2">
+                              <div>
+                                <div className="text-gray-400 text-xs mb-1">Satış Fiyatı (silver)</div>
+                                {isEditing ? (
+                                  <Input
+                                    type="text"
+                                    value={formatCurrencyInput(cityPrice.sellOrder.toString())}
+                                    onChange={(e) => updateCityPrice(item.id, cityIndex, 'sellOrder', parseCurrencyInput(e.target.value))}
+                                    className="text-xs"
+                                    placeholder="0"
+                                  />
+                                ) : (
+                                  <span className="text-white text-sm">{formatCurrency(cityPrice.sellOrder)}</span>
+                                )}
+                              </div>
+                              <div>
+                                <div className="text-gray-400 text-xs mb-1">Alış Fiyatı (silver)</div>
+                                {isEditing ? (
+                                  <Input
+                                    type="text"
+                                    value={formatCurrencyInput(cityPrice.buyOrder.toString())}
+                                    onChange={(e) => updateCityPrice(item.id, cityIndex, 'buyOrder', parseCurrencyInput(e.target.value))}
+                                    className="text-xs"
+                                    placeholder="0"
+                                  />
+                                ) : (
+                                  <span className="text-white text-sm">{formatCurrency(cityPrice.buyOrder)}</span>
+                                )}
+                              </div>
+                              <div>
+                                <div className="text-gray-400 text-xs mb-1">Miktar</div>
+                                {isEditing ? (
+                                  <Input
+                                    type="number"
+                                    value={cityPrice.quantity}
+                                    onChange={(e) => updateCityPrice(item.id, cityIndex, 'quantity', parseInt(e.target.value) || 0)}
+                                    className="text-xs"
+                                    placeholder="0"
+                                  />
+                                ) : (
+                                  <span className="text-white text-sm">{cityPrice.quantity}</span>
+                                )}
                               </div>
                             </div>
-                          ))}
-                        </div>
+                          </div>
+                        ))}
                       </div>
-                    )}
+                    </div>
                   </motion.div>
                 ))}
               </CardContent>
