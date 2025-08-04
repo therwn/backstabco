@@ -1,14 +1,12 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
-import { ArrowLeft, Save, Plus, Trash2, Calendar, User, ShoppingCart, Edit, Search } from 'lucide-react'
+import { motion } from 'framer-motion'
+import { Search, ShoppingCart, Plus, Trash2, Edit, Save, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { SearchModal } from '@/components/ui/search-modal'
-import { AlbionItem, getItemImageUrl, getAvailableTiersForItem, getAvailableEnchantmentsForItem } from '@/lib/albion-api'
-import { AlbionCity, ALBION_CITIES, ITEM_QUALITIES, TIER_RANGES, ENCHANTMENT_LEVELS } from '@/types/albion'
+import { AlbionItem, AlbionCity, searchItems, getAvailableTiersForItem, getAvailableEnchantmentsForItem } from '@/lib/albion-api'
 import Image from 'next/image'
 
 interface TableItem {

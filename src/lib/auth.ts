@@ -22,9 +22,11 @@ export const authOptions: NextAuthOptions = {
   callbacks: {
     async jwt({ token, account, profile }) {
       if (account && profile) {
-        const discordId = (profile as any).id || profile.sub
-        token.discordId = discordId
-        token.role = await determineUserRole(discordId)
+        const discordId = (profile as { id?: string; sub?: string }).id || profile.sub
+        if (discordId) {
+          token.discordId = discordId
+          token.role = await determineUserRole(discordId)
+        }
       }
       return token
     },

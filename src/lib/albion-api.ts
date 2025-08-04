@@ -335,7 +335,7 @@ const FALLBACK_ITEMS: AlbionItem[] = [
 ]
 
 // Rate limiting için basit cache
-const rateLimitCache = new Map<string, { data: any; timestamp: number }>()
+const rateLimitCache = new Map<string, { data: unknown; timestamp: number }>()
 const RATE_LIMIT_DURATION = 60000 // 1 dakika
 
 // Item listesini local dataset'ten çek
@@ -385,7 +385,7 @@ export async function fetchMarketData(itemId: string, location: string = 'Caerle
 }
 
 // Historical market data çek
-export async function fetchHistoricalData(itemId: string, location: string = 'Caerleon', days: number = 7): Promise<any[]> {
+export async function fetchHistoricalData(itemId: string, location: string = 'Caerleon', days: number = 7): Promise<unknown[]> {
   try {
     const endDate = new Date()
     const startDate = new Date()
