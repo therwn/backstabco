@@ -32,6 +32,13 @@ export const authOptions: NextAuthOptions = {
         const discordId = (profile as { id?: string; sub?: string }).id || profile.sub
         if (discordId) {
           token.discordId = discordId
+          
+          // Guild kontrolü yap
+          const isInGuild = await checkUserInGuild(discordId)
+          if (!isInGuild) {
+            throw new Error('NOT_IN_GUILD')
+          }
+          
           token.role = await determineUserRole(discordId)
         }
       }
@@ -56,18 +63,60 @@ export const authOptions: NextAuthOptions = {
   debug: true // Debug modunu açalım
 }
 
+async function checkUserInGuild(discordId: string): Promise<boolean> {
+  try {
+    // Discord API'den kullanıcının guild'lerini al
+    const response = await fetch(`https://discord.com/api/v10/users/@me/guilds`, {
+      headers: {
+        'Authorization': `Bearer ${process.env.DISCORD_BOT_TOKEN}`,
+        'Content-Type': 'application/json'
+      }
+    })
+
+    if (!response.ok) {
+      console.error('Discord API error:', response.status)
+      return false
+    }
+
+    const guilds = await response.json()
+    const isInTargetGuild = guilds.some((guild: any) => guild.id === DISCORD_GUILD_ID)
+    
+    console.log('User guilds:', guilds.map((g: any) => g.name))
+    console.log('Is in target guild:', isInTargetGuild)
+    
+    return isInTargetGuild
+  } catch (error) {
+    console.error('Error checking user guild membership:', error)
+    // Hata durumunda güvenlik için false döndür
+    return false
+  }
+}
+
 async function determineUserRole(discordId: string): Promise<'admin' | 'player'> {
   try {
-    // Geçici olarak basit kontrol - daha sonra Discord API ile değiştirilecek
+    // Discord API'den kullanıcının guild'deki rollerini al
+    const response = await fetch(`https://discord.com/api/v10/guilds/${DISCORD_GUILD_ID}/members/${discordId}`, {
+      headers: {
+        'Authorization': `Bot ${process.env.DISCORD_BOT_TOKEN}`,
+        'Content-Type': 'application/json'
+      }
+    })
+
+    if (!response.ok) {
+      console.error('Error fetching user roles:', response.status)
+      return 'player'
+    }
+
+    const member = await response.json()
     const adminRoleIds = process.env.DISCORD_ADMIN_ROLE_IDS?.split(',') || []
     
-    console.log('Discord ID:', discordId)
+    console.log('User roles:', member.roles)
     console.log('Admin role IDs:', adminRoleIds)
     
-    // Şimdilik tüm kullanıcıları player olarak ayarlayalım
-    // Daha sonra Discord Bot Token ile gerçek rol kontrolü yapacağız
-    console.log('Defaulting to player role for now')
-    return 'player'
+    // Admin rolü kontrolü
+    const hasAdminRole = member.roles.some((roleId: string) => adminRoleIds.includes(roleId))
+    
+    return hasAdminRole ? 'admin' : 'player'
   } catch (error) {
     console.error('Error determining user role:', error)
     return 'player'

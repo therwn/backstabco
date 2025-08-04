@@ -12,6 +12,7 @@ import Logo from '@/assets/logo.svg'
 import Image from 'next/image'
 import MusicPlayer from '@/components/MusicPlayer'
 import { getItemImageUrl } from '@/lib/albion-api'
+import { formatCurrency, formatCurrencyInput, parseCurrencyInput } from '@/lib/utils'
 
 interface TableItem {
   id: string
@@ -76,6 +77,7 @@ export default function TableViewPage() {
   const [showPasswordModal, setShowPasswordModal] = useState(false)
   const [password, setPassword] = useState('')
   const [alert, setAlert] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null)
+  const [editData, setEditData] = useState<Table | null>(null)
 
   useEffect(() => {
     if (params.id) {
@@ -95,6 +97,7 @@ export default function TableViewPage() {
       if (response.ok) {
         const data = await response.json()
         setTable(data)
+        setEditData(data)
         
         // Eğer tablo şifreli ise şifre modal'ını göster
         if (data.password) {
@@ -122,6 +125,65 @@ export default function TableViewPage() {
       showAlert('Şifre yanlış!', 'error')
       setPassword('')
     }
+  }
+
+  const saveTable = async () => {
+    if (!editData) return
+
+    try {
+      const response = await fetch(`/api/tables/${table!.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: editData.name,
+          password: editData.password,
+          items: editData.items
+        })
+      })
+
+      if (response.ok) {
+        showAlert('Tablo başarıyla güncellendi!', 'success')
+        setIsEditing(false)
+        setTable(editData)
+      } else {
+        showAlert('Tablo güncellenirken hata oluştu!', 'error')
+      }
+    } catch (error) {
+      console.error('Tablo güncelleme hatası:', error)
+      showAlert('Tablo güncellenirken bir hata oluştu!', 'error')
+    }
+  }
+
+  const updateEditData = (field: string, value: any) => {
+    if (!editData) return
+    setEditData({ ...editData, [field]: value })
+  }
+
+  const updateItem = (itemId: string, field: string, value: any) => {
+    if (!editData) return
+    setEditData({
+      ...editData,
+      items: editData.items.map(item => 
+        item.id === itemId ? { ...item, [field]: value } : item
+      )
+    })
+  }
+
+  const updateCityPrice = (itemId: string, cityIndex: number, field: string, value: any) => {
+    if (!editData) return
+    setEditData({
+      ...editData,
+      items: editData.items.map(item => 
+        item.id === itemId ? {
+          ...item,
+          cityPrices: item.cityPrices.map((cityPrice, index) => 
+            index === cityIndex ? { ...cityPrice, [field]: value } : cityPrice
+          )
+        } : item
+      )
+    })
   }
 
   const deleteTable = async () => {
@@ -171,6 +233,8 @@ export default function TableViewPage() {
       </div>
     )
   }
+
+  const currentData = isEditing ? editData! : table
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-black-900 via-black-800 to-black-900 relative overflow-hidden">
@@ -282,21 +346,39 @@ export default function TableViewPage() {
                 width={32} 
                 height={32}
               />
-              <h1 className="text-2xl font-bold text-white">{table.name}</h1>
-              {table.password && (
+              {isEditing ? (
+                <Input
+                  value={currentData.name}
+                  onChange={(e) => updateEditData('name', e.target.value)}
+                  className="text-2xl font-bold text-white bg-transparent border-none focus:ring-0 p-0"
+                />
+              ) : (
+                <h1 className="text-2xl font-bold text-white">{currentData.name}</h1>
+              )}
+              {currentData.password && (
                 <Lock className="w-5 h-5 text-[#F3B22D]" />
               )}
             </div>
           </div>
           <div className="flex items-center space-x-2">
-            <Button
-              variant="outline"
-              className="text-white border-white hover:bg-white hover:text-black-900"
-              onClick={() => setIsEditing(!isEditing)}
-            >
-              {isEditing ? <Save className="w-4 h-4 mr-2" /> : <Edit className="w-4 h-4 mr-2" />}
-              {isEditing ? 'Kaydet' : 'Düzenle'}
-            </Button>
+            {isEditing ? (
+              <Button
+                className="text-green-400 border-green-400 hover:bg-green-400 hover:text-white"
+                onClick={saveTable}
+              >
+                <Save className="w-4 h-4 mr-2" />
+                Kaydet
+              </Button>
+            ) : (
+              <Button
+                variant="outline"
+                className="text-white border-white hover:bg-white hover:text-black-900"
+                onClick={() => setIsEditing(true)}
+              >
+                <Edit className="w-4 h-4 mr-2" />
+                Düzenle
+              </Button>
+            )}
             <Button 
               variant="outline" 
               className="text-red-400 border-red-400 hover:bg-red-400 hover:text-white"
@@ -327,15 +409,15 @@ export default function TableViewPage() {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
                     <div className="text-gray-400 text-sm">Oluşturan</div>
-                    <div className="text-white font-medium">{table.creator}</div>
+                    <div className="text-white font-medium">{currentData.creator}</div>
                   </div>
                   <div>
                     <div className="text-gray-400 text-sm">Oluşturulma Tarihi</div>
-                    <div className="text-white font-medium">{new Date(table.createdAt).toLocaleDateString('tr-TR')}</div>
+                    <div className="text-white font-medium">{new Date(currentData.createdAt).toLocaleDateString('tr-TR')}</div>
                   </div>
                   <div>
                     <div className="text-gray-400 text-sm">Item Sayısı</div>
-                    <div className="text-white font-medium">{table.items.length}</div>
+                    <div className="text-white font-medium">{currentData.items.length}</div>
                   </div>
                 </div>
               </CardContent>
@@ -350,10 +432,10 @@ export default function TableViewPage() {
           >
             <Card className="card-glass">
               <CardHeader>
-                <CardTitle className="text-white">Item'lar ({table.items.length})</CardTitle>
+                <CardTitle className="text-white">Item'lar ({currentData.items.length})</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                {table.items.map((item, index) => (
+                {currentData.items.map((item, index) => (
                   <motion.div
                     key={item.id}
                     initial={{ opacity: 0, y: 10 }}
@@ -389,11 +471,29 @@ export default function TableViewPage() {
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                           <div className="text-gray-400 text-xs">Alış Fiyatı</div>
-                          <div className="text-white font-medium">{item.buyPrice.toLocaleString()} gümüş</div>
+                          {isEditing ? (
+                            <Input
+                              type="text"
+                              value={formatCurrencyInput(item.buyPrice.toString())}
+                              onChange={(e) => updateItem(item.id, 'buyPrice', parseCurrencyInput(e.target.value))}
+                              className="text-sm"
+                            />
+                          ) : (
+                            <div className="text-white font-medium">{formatCurrency(item.buyPrice)}</div>
+                          )}
                         </div>
                         <div>
                           <div className="text-gray-400 text-xs">Alış Miktarı</div>
-                          <div className="text-white font-medium">{item.buyQuantity}</div>
+                          {isEditing ? (
+                            <Input
+                              type="number"
+                              value={item.buyQuantity}
+                              onChange={(e) => updateItem(item.id, 'buyQuantity', parseInt(e.target.value) || 0)}
+                              className="text-sm"
+                            />
+                          ) : (
+                            <div className="text-white font-medium">{item.buyQuantity}</div>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -409,15 +509,42 @@ export default function TableViewPage() {
                               <div className="space-y-1">
                                 <div className="flex justify-between">
                                   <span className="text-gray-400 text-xs">Satış Fiyatı:</span>
-                                  <span className="text-white text-sm">{cityPrice.sellOrder.toLocaleString()} gümüş</span>
+                                  {isEditing ? (
+                                    <Input
+                                      type="text"
+                                      value={formatCurrencyInput(cityPrice.sellOrder.toString())}
+                                      onChange={(e) => updateCityPrice(item.id, cityIndex, 'sellOrder', parseCurrencyInput(e.target.value))}
+                                      className="text-xs w-20"
+                                    />
+                                  ) : (
+                                    <span className="text-white text-sm">{formatCurrency(cityPrice.sellOrder)}</span>
+                                  )}
                                 </div>
                                 <div className="flex justify-between">
                                   <span className="text-gray-400 text-xs">Alış Fiyatı:</span>
-                                  <span className="text-white text-sm">{cityPrice.buyOrder.toLocaleString()} gümüş</span>
+                                  {isEditing ? (
+                                    <Input
+                                      type="text"
+                                      value={formatCurrencyInput(cityPrice.buyOrder.toString())}
+                                      onChange={(e) => updateCityPrice(item.id, cityIndex, 'buyOrder', parseCurrencyInput(e.target.value))}
+                                      className="text-xs w-20"
+                                    />
+                                  ) : (
+                                    <span className="text-white text-sm">{formatCurrency(cityPrice.buyOrder)}</span>
+                                  )}
                                 </div>
                                 <div className="flex justify-between">
                                   <span className="text-gray-400 text-xs">Miktar:</span>
-                                  <span className="text-white text-sm">{cityPrice.quantity}</span>
+                                  {isEditing ? (
+                                    <Input
+                                      type="number"
+                                      value={cityPrice.quantity}
+                                      onChange={(e) => updateCityPrice(item.id, cityIndex, 'quantity', parseInt(e.target.value) || 0)}
+                                      className="text-xs w-20"
+                                    />
+                                  ) : (
+                                    <span className="text-white text-sm">{cityPrice.quantity}</span>
+                                  )}
                                 </div>
                               </div>
                             </div>

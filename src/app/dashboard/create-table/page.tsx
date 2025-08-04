@@ -11,6 +11,7 @@ import { Switch } from '@/components/ui/switch'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { AlbionItem, searchItems, getAvailableTiersForItem, getAvailableEnchantmentsForItem, getItemImageUrl } from '@/lib/albion-api'
 import { AlbionCity, ALBION_CITIES } from '@/types/albion'
+import { formatCurrencyInput, parseCurrencyInput } from '@/lib/utils'
 import Image from 'next/image'
 import { useSession } from 'next-auth/react'
 
@@ -698,10 +699,10 @@ export default function CreateTablePage() {
                                 <div>
                                   <label className="text-white text-sm font-medium mb-2 block">Alış Fiyatı</label>
                                   <Input
-                                    type="number"
+                                    type="text"
                                     placeholder="Black Market'ten alacağınız fiyat"
-                                    value={selectedItem.blackMarket.buyPrice}
-                                    onChange={(e) => updateBlackMarket(selectedItem.item.id, 'buyPrice', parseInt(e.target.value) || 0)}
+                                    value={formatCurrencyInput(selectedItem.blackMarket.buyPrice.toString())}
+                                    onChange={(e) => updateBlackMarket(selectedItem.item.id, 'buyPrice', parseCurrencyInput(e.target.value))}
                                     disabled={!selectedItem.isEditing}
                                   />
                                 </div>
@@ -779,10 +780,10 @@ export default function CreateTablePage() {
                                         <div>
                                           <label className="text-white text-sm font-medium mb-2 block">Satış Fiyatı</label>
                                           <Input
-                                            type="number"
+                                            type="text"
                                             placeholder="Şehirde satacağınız fiyat"
-                                            value={cityPrice.sellOrder}
-                                            onChange={(e) => updateCityPrice(selectedItem.item.id, cityPrice.city, 'sellOrder', parseInt(e.target.value) || 0)}
+                                            value={formatCurrencyInput(cityPrice.sellOrder.toString())}
+                                            onChange={(e) => updateCityPrice(selectedItem.item.id, cityPrice.city, 'sellOrder', parseCurrencyInput(e.target.value))}
                                             className="text-sm"
                                             disabled={!selectedItem.isEditing}
                                           />
@@ -792,10 +793,10 @@ export default function CreateTablePage() {
                                             <div>
                                               <label className="text-white text-sm font-medium mb-2 block">Alış Fiyatı</label>
                                               <Input
-                                                type="number"
+                                                type="text"
                                                 placeholder="Şehirde alacağınız fiyat"
-                                                value={cityPrice.buyOrder}
-                                                onChange={(e) => updateCityPrice(selectedItem.item.id, cityPrice.city, 'buyOrder', parseInt(e.target.value) || 0)}
+                                                value={formatCurrencyInput(cityPrice.buyOrder.toString())}
+                                                onChange={(e) => updateCityPrice(selectedItem.item.id, cityPrice.city, 'buyOrder', parseCurrencyInput(e.target.value))}
                                                 className="text-sm"
                                                 disabled={!selectedItem.isEditing}
                                               />

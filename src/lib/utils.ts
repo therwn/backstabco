@@ -1,8 +1,30 @@
-import { clsx, type ClassValue } from "clsx"
+import { type ClassValue, clsx } from "clsx"
 import { twMerge } from "tailwind-merge"
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
+}
+
+// Para birimi formatı
+export function formatCurrency(amount: number): string {
+  return new Intl.NumberFormat('tr-TR', {
+    style: 'currency',
+    currency: 'SILVER',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0
+  }).format(amount).replace('SILVER', '').trim() + ' gümüş'
+}
+
+// Input için para birimi formatı (sadece sayılar)
+export function formatCurrencyInput(value: string): string {
+  // Sadece sayıları al
+  const numbers = value.replace(/[^\d]/g, '')
+  return numbers
+}
+
+// Para birimi input'u için parse fonksiyonu
+export function parseCurrencyInput(value: string): number {
+  return parseInt(value.replace(/[^\d]/g, '')) || 0
 }
 
 export function generateTableId(): string {
