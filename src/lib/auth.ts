@@ -6,11 +6,13 @@ import { User } from '@/types/albion'
 const DISCORD_CLIENT_ID = process.env.DISCORD_CLIENT_ID || '1401636182202388501'
 const DISCORD_CLIENT_SECRET = process.env.DISCORD_CLIENT_SECRET || 'rBH_DdF38X1fvMCuTq0EfgwMeVZjY-LG'
 const DISCORD_GUILD_ID = process.env.DISCORD_GUILD_ID || '1366161562238451853'
+const NEXTAUTH_URL = process.env.NEXTAUTH_URL || 'http://localhost:3000'
 
 // Debug için environment variables'ları kontrol edelim
 console.log('DISCORD_CLIENT_ID:', DISCORD_CLIENT_ID ? 'SET' : 'NOT SET')
 console.log('DISCORD_CLIENT_SECRET:', DISCORD_CLIENT_SECRET ? 'SET' : 'NOT SET')
 console.log('DISCORD_GUILD_ID:', DISCORD_GUILD_ID ? 'SET' : 'NOT SET')
+console.log('NEXTAUTH_URL:', NEXTAUTH_URL)
 
 export const authOptions: NextAuthOptions = {
   providers: [
