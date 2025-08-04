@@ -9,7 +9,8 @@ const supabase = createClient(supabaseUrl, supabaseKey)
 // Database tablolarını oluştur
 export async function createTables() {
   try {
-    console.log('Supabase tabloları zaten oluşturulmuş olmalı')
+    // Black Market tabloları
+    await supabase.rpc('create_black_market_tables')
     console.log('Database tabloları başarıyla oluşturuldu')
   } catch (error) {
     console.error('Database tabloları oluşturulurken hata:', error)
