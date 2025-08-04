@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Search, ShoppingCart, Plus, Trash2, Edit, Save, X, Calendar, User, MapPin, DollarSign, Package, Eye, EyeOff, HelpCircle } from 'lucide-react'
+import { Search, ShoppingCart, Plus, Trash2, Edit, Save, X, Calendar, User, MapPin, DollarSign, Package, Eye, EyeOff, HelpCircle, ChevronDown, ChevronUp } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -27,6 +27,7 @@ interface SelectedItem {
     quantity: number
   }[]
   isEditing: boolean
+  isCollapsed: boolean
 }
 
 // Skeleton Loading Component
@@ -96,7 +97,8 @@ export default function CreateTablePage() {
         buyOrder: 0,
         quantity: 0
       })),
-      isEditing: false
+      isEditing: false,
+      isCollapsed: false
     }
     
     setSelectedItems(prev => [...prev, newSelectedItem])
@@ -125,6 +127,16 @@ export default function CreateTablePage() {
     setSelectedItems(prev => prev.map(selectedItem => {
       if (selectedItem.item.id === itemId) {
         return { ...selectedItem, isEditing: false }
+      }
+      return selectedItem
+    }))
+  }
+
+  // Item'ı collapse/expand et
+  const toggleItemCollapse = (itemId: string) => {
+    setSelectedItems(prev => prev.map(selectedItem => {
+      if (selectedItem.item.id === itemId) {
+        return { ...selectedItem, isCollapsed: !selectedItem.isCollapsed }
       }
       return selectedItem
     }))
@@ -359,7 +371,7 @@ export default function CreateTablePage() {
                           initial={{ opacity: 0 }}
                           animate={{ opacity: 1 }}
                           exit={{ opacity: 0 }}
-                          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40"
+                          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[9998]"
                           onClick={() => setShowSearchModal(false)}
                         />
                         
@@ -368,7 +380,7 @@ export default function CreateTablePage() {
                           initial={{ opacity: 0, scale: 0.95, y: 20 }}
                           animate={{ opacity: 1, scale: 1, y: 0 }}
                           exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                          className="absolute top-full left-0 right-0 mt-2 bg-black-800 border border-gray-600 rounded-lg shadow-2xl z-50"
+                          className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-full max-w-2xl bg-black-800 border border-gray-600 rounded-lg shadow-2xl z-[9999]"
                         >
                           <div className="p-4 border-b border-gray-600">
                             <div className="flex items-center space-x-2">
@@ -468,10 +480,10 @@ export default function CreateTablePage() {
                       key={selectedItem.item.id}
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
-                      className="border border-gray-600 rounded-lg p-6"
+                      className="border border-gray-600 rounded-lg"
                     >
-                      {/* Item Header */}
-                      <div className="flex items-center justify-between mb-6">
+                      {/* Item Header - Always Visible */}
+                      <div className="flex items-center justify-between p-6">
                         <div className="flex items-center space-x-3">
                           <div className="w-12 h-12 bg-gray-700 rounded flex items-center justify-center">
                             <Image
@@ -492,6 +504,14 @@ export default function CreateTablePage() {
                           </div>
                         </div>
                         <div className="flex items-center space-x-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => toggleItemCollapse(selectedItem.item.id)}
+                            className="text-gray-400 border-gray-600 hover:bg-gray-700"
+                          >
+                            {selectedItem.isCollapsed ? <ChevronDown className="w-4 h-4" /> : <ChevronUp className="w-4 h-4" />}
+                          </Button>
                           {selectedItem.isEditing ? (
                             <Button
                               size="sm"
@@ -522,128 +542,140 @@ export default function CreateTablePage() {
                         </div>
                       </div>
 
-                      {/* Black Market Section */}
-                      <div className="mb-6">
-                        <div className="flex items-center space-x-2 mb-4">
-                          <DollarSign className="w-5 h-5 text-[#F3B22D]" />
-                          <h3 className="text-white font-medium">Black Market</h3>
-                        </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <div>
-                            <label className="text-white text-sm font-medium mb-2 block">Alış Fiyatı</label>
-                            <Input
-                              type="number"
-                              placeholder="Black Market'ten alacağınız fiyat"
-                              value={selectedItem.blackMarket.buyPrice}
-                              onChange={(e) => updateBlackMarket(selectedItem.item.id, 'buyPrice', parseInt(e.target.value) || 0)}
-                              disabled={!selectedItem.isEditing}
-                            />
-                          </div>
-                          <div>
-                            <label className="text-white text-sm font-medium mb-2 block">Alış Miktarı</label>
-                            <Input
-                              type="number"
-                              placeholder="Black Market'ten alacağınız miktar"
-                              value={selectedItem.blackMarket.buyQuantity}
-                              onChange={(e) => updateBlackMarket(selectedItem.item.id, 'buyQuantity', parseInt(e.target.value) || 1)}
-                              disabled={!selectedItem.isEditing}
-                            />
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Global Buy Switch */}
-                      <div className="mb-6">
-                        <div className="flex items-center space-x-2 mb-4">
-                          <Switch
-                            checked={globalBuySwitch}
-                            onCheckedChange={setGlobalBuySwitch}
-                          />
-                          <span className="text-white text-sm">Tüm şehirlerde alış fiyatı göster</span>
-                        </div>
-                      </div>
-
-                      {/* Şehir Fiyatları */}
-                      <div>
-                        <div className="flex items-center space-x-2 mb-4">
-                          <MapPin className="w-5 h-5 text-[#F3B22D]" />
-                          <h3 className="text-white font-medium">Şehir Fiyatları</h3>
-                        </div>
-                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2">
-                          {selectedItem.cityPrices.map((cityPrice) => (
-                            <Button
-                              key={cityPrice.city}
-                              variant={cityPrice.enabled ? "default" : "outline"}
-                              size="sm"
-                              onClick={() => toggleCity(selectedItem.item.id, cityPrice.city)}
-                              className={`text-xs ${cityPrice.enabled ? 'bg-[#F3B22D] text-black' : 'text-white border-gray-600 hover:bg-gray-700'}`}
-                            >
-                              {cityPrice.city}
-                            </Button>
-                          ))}
-                        </div>
-                        
-                        {/* Enabled Cities */}
-                        {selectedItem.cityPrices.filter(cp => cp.enabled).length > 0 && (
-                          <div className="mt-4 space-y-3">
-                            {selectedItem.cityPrices.filter(cp => cp.enabled).map((cityPrice) => (
-                              <motion.div
-                                key={cityPrice.city}
-                                initial={{ opacity: 0, height: 0 }}
-                                animate={{ opacity: 1, height: 'auto' }}
-                                exit={{ opacity: 0, height: 0 }}
-                                className="border border-gray-600 rounded-lg p-4"
-                              >
-                                <div className="flex items-center justify-between mb-3">
-                                  <div className="flex items-center space-x-2">
-                                    <MapPin className="w-4 h-4 text-gray-400" />
-                                    <span className="text-white font-medium">{cityPrice.city}</span>
-                                  </div>
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    onClick={() => toggleCity(selectedItem.item.id, cityPrice.city)}
-                                    className="text-red-400 border-red-400 hover:bg-red-400 hover:text-white"
-                                  >
-                                    <X className="w-4 h-4" />
-                                  </Button>
-                                </div>
-                                
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                      {/* Item Content - Collapsible */}
+                      <AnimatePresence>
+                        {!selectedItem.isCollapsed && (
+                          <motion.div
+                            initial={{ opacity: 0, height: 0 }}
+                            animate={{ opacity: 1, height: 'auto' }}
+                            exit={{ opacity: 0, height: 0 }}
+                            className="border-t border-gray-600 p-6"
+                          >
+                            {/* Black Market Section */}
+                            <div className="mb-6">
+                              <div className="flex items-center space-x-2 mb-4">
+                                <DollarSign className="w-5 h-5 text-[#F3B22D]" />
+                                <h3 className="text-white font-medium">Black Market</h3>
+                              </div>
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                  <label className="text-white text-sm font-medium mb-2 block">Alış Fiyatı</label>
                                   <Input
                                     type="number"
-                                    placeholder="Şehirde satacağınız fiyat"
-                                    value={cityPrice.sellOrder}
-                                    onChange={(e) => updateCityPrice(selectedItem.item.id, cityPrice.city, 'sellOrder', parseInt(e.target.value) || 0)}
-                                    className="text-sm"
+                                    placeholder="Black Market'ten alacağınız fiyat"
+                                    value={selectedItem.blackMarket.buyPrice}
+                                    onChange={(e) => updateBlackMarket(selectedItem.item.id, 'buyPrice', parseInt(e.target.value) || 0)}
                                     disabled={!selectedItem.isEditing}
                                   />
-                                  {globalBuySwitch && (
-                                    <>
-                                      <Input
-                                        type="number"
-                                        placeholder="Şehirde alacağınız fiyat"
-                                        value={cityPrice.buyOrder}
-                                        onChange={(e) => updateCityPrice(selectedItem.item.id, cityPrice.city, 'buyOrder', parseInt(e.target.value) || 0)}
-                                        className="text-sm"
-                                        disabled={!selectedItem.isEditing}
-                                      />
-                                      <Input
-                                        type="number"
-                                        placeholder="Şehirde alacağınız miktar"
-                                        value={cityPrice.quantity}
-                                        onChange={(e) => updateCityPrice(selectedItem.item.id, cityPrice.city, 'quantity', parseInt(e.target.value) || 0)}
-                                        className="text-sm"
-                                        disabled={!selectedItem.isEditing}
-                                      />
-                                    </>
-                                  )}
                                 </div>
-                              </motion.div>
-                            ))}
-                          </div>
+                                <div>
+                                  <label className="text-white text-sm font-medium mb-2 block">Alış Miktarı</label>
+                                  <Input
+                                    type="number"
+                                    placeholder="Black Market'ten alacağınız miktar"
+                                    value={selectedItem.blackMarket.buyQuantity}
+                                    onChange={(e) => updateBlackMarket(selectedItem.item.id, 'buyQuantity', parseInt(e.target.value) || 1)}
+                                    disabled={!selectedItem.isEditing}
+                                  />
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Global Buy Switch */}
+                            <div className="mb-6">
+                              <div className="flex items-center space-x-2 mb-4">
+                                <Switch
+                                  checked={globalBuySwitch}
+                                  onCheckedChange={setGlobalBuySwitch}
+                                />
+                                <span className="text-white text-sm">Tüm şehirlerde alış fiyatı göster</span>
+                              </div>
+                            </div>
+
+                            {/* Şehir Fiyatları */}
+                            <div>
+                              <div className="flex items-center space-x-2 mb-4">
+                                <MapPin className="w-5 h-5 text-[#F3B22D]" />
+                                <h3 className="text-white font-medium">Şehir Fiyatları</h3>
+                              </div>
+                              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2">
+                                {selectedItem.cityPrices.map((cityPrice) => (
+                                  <Button
+                                    key={cityPrice.city}
+                                    variant={cityPrice.enabled ? "default" : "outline"}
+                                    size="sm"
+                                    onClick={() => toggleCity(selectedItem.item.id, cityPrice.city)}
+                                    className={`text-xs ${cityPrice.enabled ? 'bg-[#F3B22D] text-black' : 'text-white border-gray-600 hover:bg-gray-700'}`}
+                                  >
+                                    {cityPrice.city}
+                                  </Button>
+                                ))}
+                              </div>
+                              
+                              {/* Enabled Cities */}
+                              {selectedItem.cityPrices.filter(cp => cp.enabled).length > 0 && (
+                                <div className="mt-4 space-y-3">
+                                  {selectedItem.cityPrices.filter(cp => cp.enabled).map((cityPrice) => (
+                                    <motion.div
+                                      key={cityPrice.city}
+                                      initial={{ opacity: 0, height: 0 }}
+                                      animate={{ opacity: 1, height: 'auto' }}
+                                      exit={{ opacity: 0, height: 0 }}
+                                      className="border border-gray-600 rounded-lg p-4"
+                                    >
+                                      <div className="flex items-center justify-between mb-3">
+                                        <div className="flex items-center space-x-2">
+                                          <MapPin className="w-4 h-4 text-gray-400" />
+                                          <span className="text-white font-medium">{cityPrice.city}</span>
+                                        </div>
+                                        <Button
+                                          size="sm"
+                                          variant="outline"
+                                          onClick={() => toggleCity(selectedItem.item.id, cityPrice.city)}
+                                          className="text-red-400 border-red-400 hover:bg-red-400 hover:text-white"
+                                        >
+                                          <X className="w-4 h-4" />
+                                        </Button>
+                                      </div>
+                                      
+                                      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                                        <Input
+                                          type="number"
+                                          placeholder="Şehirde satacağınız fiyat"
+                                          value={cityPrice.sellOrder}
+                                          onChange={(e) => updateCityPrice(selectedItem.item.id, cityPrice.city, 'sellOrder', parseInt(e.target.value) || 0)}
+                                          className="text-sm"
+                                          disabled={!selectedItem.isEditing}
+                                        />
+                                        {globalBuySwitch && (
+                                          <>
+                                            <Input
+                                              type="number"
+                                              placeholder="Şehirde alacağınız fiyat"
+                                              value={cityPrice.buyOrder}
+                                              onChange={(e) => updateCityPrice(selectedItem.item.id, cityPrice.city, 'buyOrder', parseInt(e.target.value) || 0)}
+                                              className="text-sm"
+                                              disabled={!selectedItem.isEditing}
+                                            />
+                                            <Input
+                                              type="number"
+                                              placeholder="Şehirde alacağınız miktar"
+                                              value={cityPrice.quantity}
+                                              onChange={(e) => updateCityPrice(selectedItem.item.id, cityPrice.city, 'quantity', parseInt(e.target.value) || 0)}
+                                              className="text-sm"
+                                              disabled={!selectedItem.isEditing}
+                                            />
+                                          </>
+                                        )}
+                                      </div>
+                                    </motion.div>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          </motion.div>
                         )}
-                      </div>
+                      </AnimatePresence>
                     </motion.div>
                   ))}
 
