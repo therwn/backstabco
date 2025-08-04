@@ -5,11 +5,7 @@ import { BlackMarketTable } from '@/types/albion'
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
 
-console.log('DB: Supabase URL:', supabaseUrl ? 'SET' : 'NOT SET')
-console.log('DB: Supabase Service Key:', supabaseServiceKey ? 'SET' : 'NOT SET')
-
 if (!supabaseUrl || !supabaseServiceKey) {
-  console.error('DB: Missing Supabase environment variables')
   throw new Error('Missing Supabase environment variables')
 }
 
@@ -192,7 +188,6 @@ export async function getUserTables(userId: string): Promise<BlackMarketTable[]>
 // Tablo detaylarını getir (herkese açık)
 export async function getTableDetails(tableId: string): Promise<BlackMarketTable | null> {
   try {
-    console.log('DB: Getting table details for ID:', tableId)
     
     // Ana tablo bilgilerini al
     const { data: tableData, error: tableError } = await supabase
@@ -201,27 +196,20 @@ export async function getTableDetails(tableId: string): Promise<BlackMarketTable
       .eq('id', tableId)
       .single()
 
-    console.log('DB: Table query result:', tableData ? 'found' : 'not found', 'error:', tableError)
-
     if (tableError) {
       console.error('DB: Table query error:', tableError)
       return null
     }
 
     if (!tableData) {
-      console.log('DB: Table not found')
       return null
     }
-
-    console.log('DB: Table data:', tableData)
 
     // Item'ları al
     const { data: itemsData, error: itemsError } = await supabase
       .from('black_market_items')
       .select('*')
       .eq('table_id', tableId)
-
-    console.log('DB: Items query result:', itemsData?.length || 0, 'items, error:', itemsError)
 
     if (itemsError) {
       console.error('DB: Items query error:', itemsError)
@@ -234,7 +222,6 @@ export async function getTableDetails(tableId: string): Promise<BlackMarketTable
         createdAt: tableData.created_at,
         items: []
       }
-      console.log('DB: Returning table without items:', result)
       return result
     }
 
@@ -303,7 +290,6 @@ export async function getTableDetails(tableId: string): Promise<BlackMarketTable
       items: itemsWithCityPrices
     }
 
-    console.log('DB: Returning table details:', result)
     return result
   } catch (error) {
     console.error('DB: Error in getTableDetails:', error)
