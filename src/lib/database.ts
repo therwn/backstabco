@@ -303,18 +303,25 @@ export async function updateTable(
   updateData: { name: string; password: string | null; items: any[] }
 ): Promise<boolean> {
   try {
+    console.log('DB: updateTable called with:', { tableId, userId })
+    
     // Tablo sahibi kontrolü
     const { data: existingTable, error: checkError } = await supabase
       .from('black_market_tables')
-      .select('id')
+      .select('id, creator_id')
       .eq('id', tableId)
       .eq('creator_id', userId)
       .single()
 
+    console.log('DB: Existing table check:', { existingTable, checkError })
+
     if (checkError || !existingTable) {
-      console.error('Table not found or unauthorized')
+      console.error('DB: Table not found or unauthorized')
+      console.error('DB: Looking for tableId:', tableId, 'userId:', userId)
       return false
     }
+
+    console.log('DB: Table found, proceeding with update')
 
     // Tablo bilgilerini güncelle
     const { error: tableUpdateError } = await supabase
@@ -326,9 +333,11 @@ export async function updateTable(
       .eq('id', tableId)
 
     if (tableUpdateError) {
-      console.error('Error updating table:', tableUpdateError)
+      console.error('DB: Error updating table:', tableUpdateError)
       throw tableUpdateError
     }
+
+    console.log('DB: Table updated successfully')
 
     // Mevcut item'ları sil
     const { error: deleteItemsError } = await supabase
@@ -337,9 +346,11 @@ export async function updateTable(
       .eq('table_id', tableId)
 
     if (deleteItemsError) {
-      console.error('Error deleting existing items:', deleteItemsError)
+      console.error('DB: Error deleting existing items:', deleteItemsError)
       throw deleteItemsError
     }
+
+    console.log('DB: Existing items deleted')
 
     // City price'ları sil
     const { error: deleteCityPricesError } = await supabase
@@ -348,9 +359,11 @@ export async function updateTable(
       .eq('table_id', tableId)
 
     if (deleteCityPricesError) {
-      console.error('Error deleting existing city prices:', deleteCityPricesError)
+      console.error('DB: Error deleting existing city prices:', deleteCityPricesError)
       throw deleteCityPricesError
     }
+
+    console.log('DB: Existing city prices deleted')
 
     // Yeni item'ları ekle
     for (const item of updateData.items) {
@@ -368,7 +381,7 @@ export async function updateTable(
         })
 
       if (itemError) {
-        console.error('Error creating item:', itemError)
+        console.error('DB: Error creating item:', itemError)
         throw itemError
       }
 
@@ -387,16 +400,17 @@ export async function updateTable(
             })
 
           if (cityError) {
-            console.error('Error creating city price:', cityError)
+            console.error('DB: Error creating city price:', cityError)
             throw cityError
           }
         }
       }
     }
 
+    console.log('DB: Update completed successfully')
     return true
   } catch (error) {
-    console.error('Error in updateTable:', error)
+    console.error('DB: Error in updateTable:', error)
     return false
   }
 }
