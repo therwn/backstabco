@@ -27,23 +27,35 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const body = await request.json()
-    const { name, password, items } = body
+    const { name, password, items } = await request.json()
 
-    if (!name || !items || items.length === 0) {
-      return NextResponse.json({ error: 'Name and items are required' }, { status: 400 })
-    }
+    console.log('POST: Creating table with data:', {
+      name,
+      password: password ? '***' : null,
+      itemsCount: items?.length || 0,
+      userId: session.user.discordId
+    })
 
     const tableId = await createBlackMarketTable(
       name,
-      password || null,
-      session.user.discordId,
-      items
+      password,
+      items,
+      session.user.discordId
     )
 
-    return NextResponse.json({ success: true, tableId })
+    console.log('POST: Table created successfully:', tableId)
+
+    return NextResponse.json({ 
+      success: true, 
+      tableId: tableId.id,
+      message: 'Table created successfully' 
+    })
+
   } catch (error) {
     console.error('POST table creation error:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return NextResponse.json(
+      { error: 'Failed to create table', details: error },
+      { status: 500 }
+    )
   }
 } 

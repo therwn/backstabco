@@ -27,17 +27,19 @@ export async function createTables() {
 export async function createBlackMarketTable(
   name: string,
   password: string | null,
-  creatorId: string,
-  items: any[]
-): Promise<string> {
+  items: any[],
+  userId: string
+): Promise<any> {
   try {
-    // Ana tablo oluştur
-    const { data: tableData, error: tableError } = await supabase
+    // Create table
+    const { data: table, error: tableError } = await supabase
       .from('black_market_tables')
       .insert({
         name,
         password,
-        creator_id: creatorId
+        creator_id: userId,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
       })
       .select()
       .single()
@@ -47,14 +49,12 @@ export async function createBlackMarketTable(
       throw tableError
     }
 
-    const tableId = tableData.id
-
-    // Item'ları ekle
+    // Insert items
     for (const item of items) {
       const { error: itemError } = await supabase
         .from('black_market_items')
         .insert({
-          table_id: tableId,
+          table_id: table.id,
           item_id: item.id,
           item_name: item.itemName,
           item_tier: item.itemTier,
@@ -65,33 +65,31 @@ export async function createBlackMarketTable(
         })
 
       if (itemError) {
-        console.error('Error creating item:', itemError)
+        console.error('Error inserting item:', itemError)
         throw itemError
       }
 
-      // Item'ın city price'larını ekle
-      if (item.cityPrices && item.cityPrices.length > 0) {
-        for (const cityPrice of item.cityPrices) {
-          const { error: cityError } = await supabase
-            .from('city_prices')
-            .insert({
-              table_id: tableId,
-              item_id: item.id,
-              city: cityPrice.city,
-              sell_order: cityPrice.sellOrder,
-              buy_order: cityPrice.buyOrder,
-              quantity: cityPrice.quantity
-            })
+      // Insert city prices for this item
+      for (const cityPrice of item.cityPrices) {
+        const { error: cityError } = await supabase
+          .from('city_prices')
+          .insert({
+            table_id: table.id,
+            item_id: item.id,
+            city: cityPrice.city,
+            sell_order: cityPrice.sellOrder,
+            buy_order: cityPrice.buyOrder,
+            quantity: cityPrice.quantity
+          })
 
-          if (cityError) {
-            console.error('Error creating city price:', cityError)
-            throw cityError
-          }
+        if (cityError) {
+          console.error('Error inserting city price:', cityError)
+          throw cityError
         }
       }
     }
 
-    return tableId
+    return table
   } catch (error) {
     console.error('Error in createBlackMarketTable:', error)
     throw error

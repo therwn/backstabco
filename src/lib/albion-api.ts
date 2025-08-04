@@ -533,9 +533,16 @@ function extractSubcategory(itemId: string): string {
 
 // Item ikon URL'si oluştur
 export function getItemImageUrl(itemId: string, quality: number = 1, enchantment: number = 0): string {
-  const qualitySuffix = quality > 1 ? `@${quality}` : ''
+  // Item ID'yi doğru formata çevir
+  const formattedItemId = itemId.replace(/_/g, '%20')
+  
+  // Enchantment suffix'ini ekle
   const enchantmentSuffix = enchantment > 0 ? `@${enchantment}` : ''
-  return `${RENDER_API_BASE}/item/${itemId}${qualitySuffix}${enchantmentSuffix}`
+  
+  // Quality suffix'ini ekle
+  const qualitySuffix = quality > 1 ? `_q${quality}` : ''
+  
+  return `https://render.albiononline.com/v1/item/${formattedItemId}${enchantmentSuffix}${qualitySuffix}`
 }
 
 // Fiyat formatla
