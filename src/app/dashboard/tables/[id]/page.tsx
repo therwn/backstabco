@@ -136,25 +136,30 @@ export default function TableViewPage() {
   }
 
   const saveTable = async () => {
-    if (!editData) return
+    if (!editData || !table) return
 
     try {
-      const response = await fetch(`/api/tables/${table!.id}`, {
+      const response = await fetch(`/api/tables/${table.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          name: editData.name,
-          password: editData.password,
-          items: editData.items
+          name: table.name, // Orijinal tablo adını koru
+          password: table.password, // Orijinal şifreyi koru
+          items: editData.items // Sadece item'ları güncelle
         })
       })
 
       if (response.ok) {
         showAlert('Tablo başarıyla güncellendi!', 'success')
         setIsEditing(false)
-        setTable(editData)
+        // Tablo adı ve şifreyi koruyarak güncelle
+        setTable({
+          ...editData,
+          name: table.name,
+          password: table.password
+        })
       } else {
         const errorData = await response.json()
         if (errorData.error === 'Table not found or unauthorized') {
@@ -359,15 +364,7 @@ export default function TableViewPage() {
                 width={32} 
                 height={32}
               />
-              {isEditing ? (
-                <Input
-                  value={currentData.name}
-                  onChange={(e) => updateEditData('name', e.target.value)}
-                  className="text-2xl font-bold text-white bg-transparent border-none focus:ring-0 p-0"
-                />
-              ) : (
-                <h1 className="text-2xl font-bold text-white">{currentData.name}</h1>
-              )}
+              <h1 className="text-2xl font-bold text-white">{currentData.name}</h1>
               {currentData.password && (
                 <Lock className="w-5 h-5 text-[#F3B22D]" />
               )}
@@ -437,22 +434,11 @@ export default function TableViewPage() {
                 {/* Düzenleme modunda tablo bilgileri */}
                 {isEditing && (
                   <div className="mt-6 space-y-4">
-                    <div>
-                      <div className="text-gray-400 text-sm mb-2">Tablo Adı</div>
-                      <Input
-                        value={currentData.name}
-                        onChange={(e) => updateEditData('name', e.target.value)}
-                        placeholder="Tablo adını girin..."
-                      />
-                    </div>
-                    <div>
-                      <div className="text-gray-400 text-sm mb-2">Tablo Şifresi (Opsiyonel)</div>
-                      <Input
-                        type="password"
-                        value={currentData.password || ''}
-                        onChange={(e) => updateEditData('password', e.target.value)}
-                        placeholder="Şifre belirlemek istemiyorsanız boş bırakın..."
-                      />
+                    <div className="p-4 bg-gray-800/50 rounded-lg border border-gray-600">
+                      <div className="text-gray-400 text-sm mb-2">📝 Düzenleme Modu</div>
+                      <div className="text-white text-sm">
+                        Tablo adı ve şifre değiştirilemez. Sadece item'lar ve şehir bilgileri düzenlenebilir.
+                      </div>
                     </div>
                   </div>
                 )}
@@ -506,26 +492,28 @@ export default function TableViewPage() {
                       <div className="text-gray-400 text-sm mb-2">Black Market</div>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                          <div className="text-gray-400 text-xs">Alış Fiyatı</div>
+                          <div className="text-gray-400 text-xs mb-1">Alış Fiyatı (silver)</div>
                           {isEditing ? (
                             <Input
                               type="text"
                               value={formatCurrencyInput(item.buyPrice.toString())}
                               onChange={(e) => updateItem(item.id, 'buyPrice', parseCurrencyInput(e.target.value))}
                               className="text-sm"
+                              placeholder="0"
                             />
                           ) : (
                             <div className="text-white font-medium">{formatCurrency(item.buyPrice)}</div>
                           )}
                         </div>
                         <div>
-                          <div className="text-gray-400 text-xs">Alış Miktarı</div>
+                          <div className="text-gray-400 text-xs mb-1">Alış Miktarı</div>
                           {isEditing ? (
                             <Input
                               type="number"
                               value={item.buyQuantity}
                               onChange={(e) => updateItem(item.id, 'buyQuantity', parseInt(e.target.value) || 0)}
                               className="text-sm"
+                              placeholder="0"
                             />
                           ) : (
                             <div className="text-white font-medium">{item.buyQuantity}</div>
@@ -542,41 +530,44 @@ export default function TableViewPage() {
                           {item.cityPrices.map((cityPrice, cityIndex) => (
                             <div key={cityIndex} className="border border-gray-600 rounded p-3">
                               <div className="text-white font-medium mb-2">{cityPrice.city}</div>
-                              <div className="space-y-1">
-                                <div className="flex justify-between">
-                                  <span className="text-gray-400 text-xs">Satış Fiyatı:</span>
+                              <div className="space-y-2">
+                                <div>
+                                  <div className="text-gray-400 text-xs mb-1">Satış Fiyatı (silver)</div>
                                   {isEditing ? (
                                     <Input
                                       type="text"
                                       value={formatCurrencyInput(cityPrice.sellOrder.toString())}
                                       onChange={(e) => updateCityPrice(item.id, cityIndex, 'sellOrder', parseCurrencyInput(e.target.value))}
-                                      className="text-xs w-20"
+                                      className="text-xs"
+                                      placeholder="0"
                                     />
                                   ) : (
                                     <span className="text-white text-sm">{formatCurrency(cityPrice.sellOrder)}</span>
                                   )}
                                 </div>
-                                <div className="flex justify-between">
-                                  <span className="text-gray-400 text-xs">Alış Fiyatı:</span>
+                                <div>
+                                  <div className="text-gray-400 text-xs mb-1">Alış Fiyatı (silver)</div>
                                   {isEditing ? (
                                     <Input
                                       type="text"
                                       value={formatCurrencyInput(cityPrice.buyOrder.toString())}
                                       onChange={(e) => updateCityPrice(item.id, cityIndex, 'buyOrder', parseCurrencyInput(e.target.value))}
-                                      className="text-xs w-20"
+                                      className="text-xs"
+                                      placeholder="0"
                                     />
                                   ) : (
                                     <span className="text-white text-sm">{formatCurrency(cityPrice.buyOrder)}</span>
                                   )}
                                 </div>
-                                <div className="flex justify-between">
-                                  <span className="text-gray-400 text-xs">Miktar:</span>
+                                <div>
+                                  <div className="text-gray-400 text-xs mb-1">Miktar</div>
                                   {isEditing ? (
                                     <Input
                                       type="number"
                                       value={cityPrice.quantity}
                                       onChange={(e) => updateCityPrice(item.id, cityIndex, 'quantity', parseInt(e.target.value) || 0)}
-                                      className="text-xs w-20"
+                                      className="text-xs"
+                                      placeholder="0"
                                     />
                                   ) : (
                                     <span className="text-white text-sm">{cityPrice.quantity}</span>
