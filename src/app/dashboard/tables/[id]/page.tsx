@@ -93,17 +93,26 @@ export default function TableViewPage() {
 
   const fetchTableDetails = async (tableId: string) => {
     try {
+      console.log('Fetching table details for ID:', tableId)
       const response = await fetch(`/api/tables/${tableId}`)
+      console.log('Response status:', response.status)
+      
       if (response.ok) {
         const data = await response.json()
+        console.log('Table data:', data)
         setTable(data)
         setEditData(data)
         
         // Sadece şifreli tablolar için şifre modal'ını göster
         if (data.password && data.password.trim() !== '') {
+          console.log('Password protected table, showing modal')
           setShowPasswordModal(true)
+        } else {
+          console.log('No password, table should be visible')
         }
       } else {
+        const errorData = await response.json()
+        console.error('API Error:', errorData)
         showAlert('Tablo bulunamadı!', 'error')
         router.push('/dashboard')
       }
