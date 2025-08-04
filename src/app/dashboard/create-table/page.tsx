@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Switch } from '@/components/ui/switch'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { AlbionItem, searchItems, getAvailableTiersForItem, getAvailableEnchantmentsForItem, getItemImageUrl } from '@/lib/albion-api'
 import { AlbionCity, ALBION_CITIES } from '@/types/albion'
 import Image from 'next/image'
@@ -15,6 +16,8 @@ import { useSession } from 'next-auth/react'
 
 interface SelectedItem {
   item: AlbionItem
+  selectedTier: number
+  selectedEnchantment: number
   blackMarket: {
     buyPrice: number
     buyQuantity: number
@@ -86,6 +89,8 @@ export default function CreateTablePage() {
   const handleItemSelect = (item: AlbionItem) => {
     const newSelectedItem: SelectedItem = {
       item,
+      selectedTier: item.tier,
+      selectedEnchantment: 0,
       blackMarket: {
         buyPrice: 0,
         buyQuantity: 1
@@ -137,6 +142,26 @@ export default function CreateTablePage() {
     setSelectedItems(prev => prev.map(selectedItem => {
       if (selectedItem.item.id === itemId) {
         return { ...selectedItem, isCollapsed: !selectedItem.isCollapsed }
+      }
+      return selectedItem
+    }))
+  }
+
+  // Tier değiştir
+  const updateTier = (itemId: string, tier: number) => {
+    setSelectedItems(prev => prev.map(selectedItem => {
+      if (selectedItem.item.id === itemId) {
+        return { ...selectedItem, selectedTier: tier }
+      }
+      return selectedItem
+    }))
+  }
+
+  // Enchantment değiştir
+  const updateEnchantment = (itemId: string, enchantment: number) => {
+    setSelectedItems(prev => prev.map(selectedItem => {
+      if (selectedItem.item.id === itemId) {
+        return { ...selectedItem, selectedEnchantment: enchantment }
       }
       return selectedItem
     }))
@@ -211,8 +236,8 @@ export default function CreateTablePage() {
       const blackMarketItems = selectedItems.map(selectedItem => ({
         id: selectedItem.item.id,
         itemName: selectedItem.item.name,
-        itemTier: selectedItem.item.tier,
-        itemEnchantment: 0,
+        itemTier: selectedItem.selectedTier,
+        itemEnchantment: selectedItem.selectedEnchantment,
         itemQuality: 1,
         buyPrice: selectedItem.blackMarket.buyPrice,
         buyQuantity: selectedItem.blackMarket.buyQuantity,
@@ -380,11 +405,11 @@ export default function CreateTablePage() {
                           initial={{ opacity: 0, scale: 0.95, y: 20 }}
                           animate={{ opacity: 1, scale: 1, y: 0 }}
                           exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                          className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-full max-w-2xl bg-black-800 border border-gray-600 rounded-lg shadow-2xl z-[9999]"
+                          className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-full max-w-4xl bg-black-800 border border-gray-600 rounded-lg shadow-2xl z-[9999]"
                         >
-                          <div className="p-4 border-b border-gray-600">
+                          <div className="p-6 border-b border-gray-600">
                             <div className="flex items-center space-x-2">
-                              <Search className="w-4 h-4 text-gray-400" />
+                              <Search className="w-5 h-5 text-gray-400" />
                               <Input
                                 type="text"
                                 placeholder="Item adı yazın..."
@@ -395,16 +420,16 @@ export default function CreateTablePage() {
                                     handleSearch()
                                   }
                                 }}
-                                className="flex-1 bg-transparent border-none focus:ring-0 text-white"
+                                className="flex-1 bg-transparent border-none focus:ring-0 text-white text-lg"
                                 autoFocus
                               />
                               {isSearching && (
-                                <div className="w-4 h-4 border-2 border-[#F3B22D] border-t-transparent rounded-full animate-spin"></div>
+                                <div className="w-5 h-5 border-2 border-[#F3B22D] border-t-transparent rounded-full animate-spin"></div>
                               )}
                             </div>
                           </div>
 
-                          <div className="max-h-80 overflow-y-auto">
+                          <div className="max-h-96 overflow-y-auto">
                             {isSearching ? (
                               <div className="py-2">
                                 {[...Array(5)].map((_, i) => (
@@ -416,17 +441,17 @@ export default function CreateTablePage() {
                                 {searchResults.map((item) => (
                                   <motion.div
                                     key={item.id}
-                                    className="flex items-center space-x-3 p-3 hover:bg-black-700 cursor-pointer"
+                                    className="flex items-center space-x-4 p-4 hover:bg-black-700 cursor-pointer"
                                     whileHover={{ backgroundColor: '#374151' }}
                                     onClick={() => handleItemSelect(item)}
                                   >
-                                    <div className="w-8 h-8 bg-gray-700 rounded flex items-center justify-center">
+                                    <div className="w-12 h-12 bg-gray-700 rounded flex items-center justify-center">
                                       <Image
                                         src={getItemImageUrl(item.id)}
                                         alt={item.name}
-                                        width={24}
-                                        height={24}
-                                        className="w-6 h-6"
+                                        width={48}
+                                        height={48}
+                                        className="w-10 h-10"
                                         onError={(e) => {
                                           const target = e.target as HTMLImageElement
                                           target.style.display = 'none'
@@ -434,19 +459,19 @@ export default function CreateTablePage() {
                                       />
                                     </div>
                                     <div className="flex-1">
-                                      <div className="text-white font-medium">{item.name}</div>
+                                      <div className="text-white font-medium text-lg">{item.name}</div>
                                       <div className="text-gray-400 text-sm">T{item.tier} • {item.category}</div>
                                     </div>
-                                    <Plus className="w-4 h-4 text-[#F3B22D]" />
+                                    <Plus className="w-5 h-5 text-[#F3B22D]" />
                                   </motion.div>
                                 ))}
                               </div>
                             ) : searchQuery && !isSearching ? (
-                              <div className="p-4 text-center text-gray-400">
+                              <div className="p-6 text-center text-gray-400">
                                 Sonuç bulunamadı
                               </div>
                             ) : (
-                              <div className="p-4 text-center text-gray-400">
+                              <div className="p-6 text-center text-gray-400">
                                 Arama yapmak için yazmaya başlayın
                               </div>
                             )}
@@ -484,14 +509,14 @@ export default function CreateTablePage() {
                     >
                       {/* Item Header - Always Visible */}
                       <div className="flex items-center justify-between p-6">
-                        <div className="flex items-center space-x-3">
-                          <div className="w-12 h-12 bg-gray-700 rounded flex items-center justify-center">
+                        <div className="flex items-center space-x-4">
+                          <div className="w-16 h-16 bg-gray-700 rounded flex items-center justify-center">
                             <Image
-                              src={getItemImageUrl(selectedItem.item.id)}
+                              src={getItemImageUrl(selectedItem.item.id, 1, selectedItem.selectedEnchantment)}
                               alt={selectedItem.item.name}
-                              width={32}
-                              height={32}
-                              className="w-8 h-8"
+                              width={64}
+                              height={64}
+                              className="w-14 h-14"
                               onError={(e) => {
                                 const target = e.target as HTMLImageElement
                                 target.style.display = 'none'
@@ -500,7 +525,7 @@ export default function CreateTablePage() {
                           </div>
                           <div>
                             <div className="text-white font-medium text-lg">{selectedItem.item.name}</div>
-                            <div className="text-gray-400 text-sm">T{selectedItem.item.tier} • {selectedItem.item.category}</div>
+                            <div className="text-gray-400 text-sm">T{selectedItem.selectedTier} • {selectedItem.item.category}</div>
                           </div>
                         </div>
                         <div className="flex items-center space-x-2">
@@ -551,6 +576,54 @@ export default function CreateTablePage() {
                             exit={{ opacity: 0, height: 0 }}
                             className="border-t border-gray-600 p-6"
                           >
+                            {/* Tier ve Enchantment Seçimi */}
+                            <div className="mb-6">
+                              <div className="flex items-center space-x-2 mb-4">
+                                <Package className="w-5 h-5 text-[#F3B22D]" />
+                                <h3 className="text-white font-medium">Item Özellikleri</h3>
+                              </div>
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                  <label className="text-white text-sm font-medium mb-2 block">Tier</label>
+                                  <Select
+                                    value={selectedItem.selectedTier.toString()}
+                                    onValueChange={(value) => updateTier(selectedItem.item.id, parseInt(value))}
+                                    disabled={!selectedItem.isEditing}
+                                  >
+                                    <SelectTrigger>
+                                      <SelectValue placeholder="Tier seçin" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      {[1, 2, 3, 4, 5, 6, 7, 8].map((tier) => (
+                                        <SelectItem key={tier} value={tier.toString()}>
+                                          T{tier}
+                                        </SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+                                <div>
+                                  <label className="text-white text-sm font-medium mb-2 block">Enchantment</label>
+                                  <Select
+                                    value={selectedItem.selectedEnchantment.toString()}
+                                    onValueChange={(value) => updateEnchantment(selectedItem.item.id, parseInt(value))}
+                                    disabled={!selectedItem.isEditing}
+                                  >
+                                    <SelectTrigger>
+                                      <SelectValue placeholder="Enchantment seçin" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      {[0, 1, 2, 3, 4].map((enchant) => (
+                                        <SelectItem key={enchant} value={enchant.toString()}>
+                                          +{enchant}
+                                        </SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+                              </div>
+                            </div>
+
                             {/* Black Market Section */}
                             <div className="mb-6">
                               <div className="flex items-center space-x-2 mb-4">
@@ -639,32 +712,41 @@ export default function CreateTablePage() {
                                       </div>
                                       
                                       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                                        <Input
-                                          type="number"
-                                          placeholder="Şehirde satacağınız fiyat"
-                                          value={cityPrice.sellOrder}
-                                          onChange={(e) => updateCityPrice(selectedItem.item.id, cityPrice.city, 'sellOrder', parseInt(e.target.value) || 0)}
-                                          className="text-sm"
-                                          disabled={!selectedItem.isEditing}
-                                        />
+                                        <div>
+                                          <label className="text-white text-sm font-medium mb-2 block">Satış Fiyatı</label>
+                                          <Input
+                                            type="number"
+                                            placeholder="Şehirde satacağınız fiyat"
+                                            value={cityPrice.sellOrder}
+                                            onChange={(e) => updateCityPrice(selectedItem.item.id, cityPrice.city, 'sellOrder', parseInt(e.target.value) || 0)}
+                                            className="text-sm"
+                                            disabled={!selectedItem.isEditing}
+                                          />
+                                        </div>
                                         {globalBuySwitch && (
                                           <>
-                                            <Input
-                                              type="number"
-                                              placeholder="Şehirde alacağınız fiyat"
-                                              value={cityPrice.buyOrder}
-                                              onChange={(e) => updateCityPrice(selectedItem.item.id, cityPrice.city, 'buyOrder', parseInt(e.target.value) || 0)}
-                                              className="text-sm"
-                                              disabled={!selectedItem.isEditing}
-                                            />
-                                            <Input
-                                              type="number"
-                                              placeholder="Şehirde alacağınız miktar"
-                                              value={cityPrice.quantity}
-                                              onChange={(e) => updateCityPrice(selectedItem.item.id, cityPrice.city, 'quantity', parseInt(e.target.value) || 0)}
-                                              className="text-sm"
-                                              disabled={!selectedItem.isEditing}
-                                            />
+                                            <div>
+                                              <label className="text-white text-sm font-medium mb-2 block">Alış Fiyatı</label>
+                                              <Input
+                                                type="number"
+                                                placeholder="Şehirde alacağınız fiyat"
+                                                value={cityPrice.buyOrder}
+                                                onChange={(e) => updateCityPrice(selectedItem.item.id, cityPrice.city, 'buyOrder', parseInt(e.target.value) || 0)}
+                                                className="text-sm"
+                                                disabled={!selectedItem.isEditing}
+                                              />
+                                            </div>
+                                            <div>
+                                              <label className="text-white text-sm font-medium mb-2 block">Miktar</label>
+                                              <Input
+                                                type="number"
+                                                placeholder="Şehirde alacağınız miktar"
+                                                value={cityPrice.quantity}
+                                                onChange={(e) => updateCityPrice(selectedItem.item.id, cityPrice.city, 'quantity', parseInt(e.target.value) || 0)}
+                                                className="text-sm"
+                                                disabled={!selectedItem.isEditing}
+                                              />
+                                            </div>
                                           </>
                                         )}
                                       </div>
