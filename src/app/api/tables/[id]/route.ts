@@ -14,7 +14,7 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const tableDetails = await getTableDetails(params.id, session.user.discordId)
+    const tableDetails = await getTableDetails(params.id)
     
     if (!tableDetails) {
       return NextResponse.json({ error: 'Table not found' }, { status: 404 })

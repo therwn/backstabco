@@ -1,15 +1,17 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import Link from 'next/link'
-import { Plus, LogOut, Eye, Trash2 } from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import { motion } from 'framer-motion'
+import { Plus, Eye, Trash2, LogOut, User, Calendar, Package } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { motion } from 'motion/react'
-import { signOut, useSession } from 'next-auth/react'
+import { useSession, signOut } from 'next-auth/react'
 import Logo from '@/assets/logo.svg'
 import Image from 'next/image'
+import Link from 'next/link'
 import MusicPlayer from '@/components/MusicPlayer'
+import { AnimatePresence } from 'framer-motion'
 
 interface Table {
   id: string
@@ -21,9 +23,11 @@ interface Table {
 }
 
 export default function DashboardPage() {
+  const router = useRouter()
   const { data: session } = useSession()
   const [tables, setTables] = useState<Table[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [showLogout, setShowLogout] = useState(false)
 
   useEffect(() => {
     fetchTables()
@@ -35,16 +39,14 @@ export default function DashboardPage() {
       if (response.ok) {
         const data = await response.json()
         setTables(data)
+      } else {
+        console.error('Failed to fetch tables')
       }
     } catch (error) {
-      console.error('Tablolar getirilirken hata:', error)
+      console.error('Error fetching tables:', error)
     } finally {
       setIsLoading(false)
     }
-  }
-
-  const handleLogout = () => {
-    signOut({ callbackUrl: '/auth' })
   }
 
   const deleteTable = async (tableId: string) => {
@@ -56,15 +58,33 @@ export default function DashboardPage() {
       })
 
       if (response.ok) {
+        // Tabloyu listeden kaldır
         setTables(prev => prev.filter(table => table.id !== tableId))
         alert('Tablo başarıyla silindi!')
       } else {
         alert('Tablo silinirken hata oluştu!')
       }
     } catch (error) {
-      console.error('Tablo silme hatası:', error)
+      console.error('Error deleting table:', error)
       alert('Tablo silinirken bir hata oluştu!')
     }
+  }
+
+  const isTableOwner = (table: Table) => {
+    return session?.user?.discordId === table.creator
+  }
+
+  if (!session) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-black-900 via-black-800 to-black-900 relative overflow-hidden">
+        <div className="flex items-center justify-center min-h-screen">
+          <div className="text-center">
+            <div className="w-8 h-8 border-2 border-[#F3B22D] border-t-transparent rounded-full animate-spin mx-auto"></div>
+            <p className="text-gray-400 mt-2">Yükleniyor...</p>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -90,30 +110,48 @@ export default function DashboardPage() {
           transition={{ duration: 0.6 }}
         >
           <div className="flex items-center space-x-4">
-            <motion.div 
-              className="flex items-center justify-center"
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.95 }}
-            >
-              <Image 
-                src={Logo} 
-                alt="BACKSTAB.CO Logo" 
-                width={48} 
-                height={48}
-                className="w-12 h-12"
-              />
-            </motion.div>
-            <h1 className="text-2xl font-bold text-white">BACKSTAB.CO Dashboard</h1>
+            <Image 
+              src={Logo} 
+              alt="BACKSTAB.CO Logo" 
+              width={40} 
+              height={40}
+            />
+            <h1 className="text-3xl font-bold text-white">Dashboard</h1>
           </div>
-          <div className="flex items-center space-x-4">
-            <Button 
-              variant="outline" 
+          
+          {/* Profile & Logout */}
+          <div className="relative">
+            <Button
+              variant="outline"
               className="text-white border-white hover:bg-white hover:text-black-900"
-              onClick={handleLogout}
+              onMouseEnter={() => setShowLogout(true)}
+              onMouseLeave={() => setTimeout(() => setShowLogout(false), 500)}
             >
-              <LogOut className="w-4 h-4 mr-2" />
-              Çıkış Yap
+              <User className="w-4 h-4 mr-2" />
+              {session.user?.name || 'Kullanıcı'}
             </Button>
+            
+            <AnimatePresence>
+              {showLogout && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 10 }}
+                  className="absolute right-0 top-full mt-2 bg-black-800 border border-gray-600 rounded-lg shadow-lg z-[99999] pointer-events-auto"
+                  onMouseEnter={() => setShowLogout(true)}
+                  onMouseLeave={() => setTimeout(() => setShowLogout(false), 500)}
+                >
+                  <Button
+                    variant="ghost"
+                    className="w-full text-red-400 hover:bg-red-400 hover:text-white whitespace-nowrap min-w-[140px]"
+                    onClick={() => signOut()}
+                  >
+                    <LogOut className="w-4 h-4 mr-2 flex-shrink-0" />
+                    Çıkış Yap
+                  </Button>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
         </motion.div>
       </div>
@@ -121,7 +159,8 @@ export default function DashboardPage() {
       {/* Main Content */}
       <div className="max-w-[1240px] mx-auto px-6 py-8 relative z-10">
         <div className="space-y-8">
-          {/* Quick Actions Section */}
+          
+          {/* Quick Actions */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -129,25 +168,26 @@ export default function DashboardPage() {
           >
             <Card className="card-glass">
               <CardHeader>
-                <CardTitle className="text-white">Hızlı İşlemler</CardTitle>
+                <CardTitle className="text-white flex items-center">
+                  <Plus className="w-5 h-5 mr-2" />
+                  Hızlı İşlemler
+                </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <Link href="/dashboard/create-table">
-                  <motion.div
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
+              <CardContent>
+                <div className="flex flex-wrap gap-4">
+                  <Button 
+                    className="btn-primary"
+                    onClick={() => router.push('/dashboard/create-table')}
                   >
-                    <Button className="w-full btn-primary">
-                      <Plus className="w-4 h-4 mr-2" />
-                      Yeni Tablo Oluştur
-                    </Button>
-                  </motion.div>
-                </Link>
+                    <Plus className="w-4 h-4 mr-2" />
+                    Yeni Tablo Oluştur
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           </motion.div>
 
-          {/* Active Tables Section */}
+          {/* Tables */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -155,7 +195,10 @@ export default function DashboardPage() {
           >
             <Card className="card-glass">
               <CardHeader>
-                <CardTitle className="text-white">Aktif Tablolar ({tables.length})</CardTitle>
+                <CardTitle className="text-white flex items-center">
+                  <Package className="w-5 h-5 mr-2" />
+                  Tüm Tablolar ({tables.length})
+                </CardTitle>
               </CardHeader>
               <CardContent>
                 {isLoading ? (
@@ -165,24 +208,48 @@ export default function DashboardPage() {
                   </div>
                 ) : tables.length === 0 ? (
                   <div className="text-center py-8">
-                    <p className="text-gray-400">Henüz tablo oluşturmadınız</p>
-                    <p className="text-gray-500 text-sm">Yeni tablo oluşturmak için yukarıdaki butonu kullanın</p>
+                    <Package className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                    <p className="text-gray-400">Henüz tablo oluşturulmamış</p>
+                    <Button 
+                      className="mt-4"
+                      onClick={() => router.push('/dashboard/create-table')}
+                    >
+                      <Plus className="w-4 h-4 mr-2" />
+                      İlk Tabloyu Oluştur
+                    </Button>
                   </div>
                 ) : (
-                  <div className="space-y-3">
-                    {tables.map((table) => (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {tables.map((table, index) => (
                       <motion.div
                         key={table.id}
-                        className="flex items-center justify-between p-3 bg-black-700 rounded-lg hover:bg-black-600 transition-colors"
-                        whileHover={{ scale: 1.02, x: 5 }}
-                        whileTap={{ scale: 0.98 }}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.6, delay: 0.6 + index * 0.1 }}
+                        className="border border-gray-600 rounded-lg p-4 hover:border-[#F3B22D] transition-colors"
                       >
-                        <div>
-                          <div className="text-white font-medium">{table.name}</div>
-                          <div className="text-gray-400 text-sm">
-                            {table.items.length} item • {new Date(table.createdAt).toLocaleDateString('tr-TR')}
+                        <div className="flex items-center justify-between mb-3">
+                          <h3 className="text-white font-medium text-lg">{table.name}</h3>
+                          {table.password && (
+                            <span className="text-[#F3B22D] text-xs">🔒 Şifreli</span>
+                          )}
+                        </div>
+                        
+                        <div className="space-y-2 mb-4">
+                          <div className="flex items-center text-gray-400 text-sm">
+                            <User className="w-4 h-4 mr-2" />
+                            <span>{table.creator}</span>
+                          </div>
+                          <div className="flex items-center text-gray-400 text-sm">
+                            <Calendar className="w-4 h-4 mr-2" />
+                            <span>{new Date(table.createdAt).toLocaleDateString('tr-TR')}</span>
+                          </div>
+                          <div className="flex items-center text-gray-400 text-sm">
+                            <Package className="w-4 h-4 mr-2" />
+                            <span>{table.items.length} item</span>
                           </div>
                         </div>
+                        
                         <div className="flex items-center space-x-2">
                           <Link href={`/dashboard/tables/${table.id}`}>
                             <Button size="sm" variant="outline" className="text-white border-white hover:bg-white hover:text-black-900">
@@ -190,14 +257,29 @@ export default function DashboardPage() {
                               Görüntüle
                             </Button>
                           </Link>
-                          <Button 
-                            size="sm" 
-                            variant="outline" 
-                            className="text-red-400 border-red-400 hover:bg-red-400 hover:text-white"
-                            onClick={() => deleteTable(table.id)}
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
+                          
+                          {isTableOwner(table) && (
+                            <>
+                              <Button 
+                                size="sm" 
+                                variant="outline" 
+                                className="text-blue-400 border-blue-400 hover:bg-blue-400 hover:text-white"
+                                onClick={() => router.push(`/dashboard/tables/${table.id}`)}
+                              >
+                                <Package className="w-4 h-4 mr-1" />
+                                Düzenle
+                              </Button>
+                              <Button 
+                                size="sm" 
+                                variant="outline" 
+                                className="text-red-400 border-red-400 hover:bg-red-400 hover:text-white"
+                                onClick={() => deleteTable(table.id)}
+                              >
+                                <Trash2 className="w-4 h-4 mr-1" />
+                                Sil
+                              </Button>
+                            </>
+                          )}
                         </div>
                       </motion.div>
                     ))}

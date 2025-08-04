@@ -88,6 +88,50 @@ export async function createBlackMarketTable(
   }
 }
 
+// Tüm tabloları getir (herkese açık)
+export async function getAllTables(): Promise<BlackMarketTable[]> {
+  try {
+    const { data, error } = await supabase
+      .from('black_market_tables')
+      .select(`
+        id,
+        name,
+        password,
+        creator_id,
+        created_at,
+        black_market_items (
+          id,
+          item_id,
+          item_name,
+          item_tier,
+          item_enchantment,
+          item_quality,
+          buy_price,
+          buy_quantity
+        )
+      `)
+      .order('created_at', { ascending: false })
+
+    if (error) {
+      console.error('Error fetching all tables:', error)
+      throw error
+    }
+
+    return data.map(table => ({
+      id: table.id,
+      name: table.name,
+      password: table.password,
+      creator: table.creator_id,
+      createdAt: table.created_at,
+      items: table.black_market_items || []
+    }))
+  } catch (error) {
+    console.error('Error in getAllTables:', error)
+    throw error
+  }
+}
+
+// Kullanıcının kendi tablolarını getir (sadece düzenleme için)
 export async function getUserTables(userId: string): Promise<BlackMarketTable[]> {
   try {
     const { data, error } = await supabase
@@ -131,14 +175,14 @@ export async function getUserTables(userId: string): Promise<BlackMarketTable[]>
   }
 }
 
-export async function getTableDetails(tableId: string, userId: string): Promise<BlackMarketTable | null> {
+// Tablo detaylarını getir (herkese açık)
+export async function getTableDetails(tableId: string): Promise<BlackMarketTable | null> {
   try {
     // Ana tablo bilgilerini al
     const { data: tableData, error: tableError } = await supabase
       .from('black_market_tables')
       .select('*')
       .eq('id', tableId)
-      .eq('creator_id', userId)
       .single()
 
     if (tableError || !tableData) {
