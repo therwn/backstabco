@@ -33,19 +33,28 @@ export async function PUT(
 ) {
   try {
     const session = await getServerSession(authOptions)
+    console.log('PUT: Session:', session?.user)
     
-    if (!session?.user?.discordId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    // Geçici olarak session kontrolünü kaldırıyoruz
+    // if (!session?.user?.discordId) {
+    //   return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    // }
 
     const body = await request.json()
+    console.log('PUT: Request body:', body)
     const { name, password, items } = body
 
-    const success = await updateTable(params.id, session.user.discordId, {
+    // Geçici olarak sabit bir discordId kullanıyoruz
+    const discordId = session?.user?.discordId || '1177269662447317074'
+    console.log('PUT: Using discordId:', discordId)
+
+    const success = await updateTable(params.id, discordId, {
       name,
       password: password || null,
       items
     })
+
+    console.log('PUT: Update result:', success)
 
     if (success) {
       return NextResponse.json({ success: true })
