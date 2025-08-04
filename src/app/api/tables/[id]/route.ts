@@ -10,12 +10,12 @@ export async function GET(
   try {
     const session = await getServerSession(authOptions)
     
-    if (!session?.user?.email) {
+    if (!session?.user?.discordId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     const tableId = params.id
-    const tableDetails = await getTableDetails(tableId, session.user.email)
+    const tableDetails = await getTableDetails(tableId, session.user.discordId)
 
     if (!tableDetails) {
       return NextResponse.json({ error: 'Table not found' }, { status: 404 })
@@ -35,12 +35,12 @@ export async function DELETE(
   try {
     const session = await getServerSession(authOptions)
     
-    if (!session?.user?.email) {
+    if (!session?.user?.discordId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     const tableId = params.id
-    const success = await deleteTable(tableId, session.user.email)
+    const success = await deleteTable(tableId, session.user.discordId)
 
     if (!success) {
       return NextResponse.json({ error: 'Table not found or unauthorized' }, { status: 404 })

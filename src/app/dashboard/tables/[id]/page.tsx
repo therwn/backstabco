@@ -235,7 +235,7 @@ export default function TableViewPage() {
                     <div className="flex items-center space-x-4 mb-4">
                       <div className="w-16 h-16 rounded flex items-center justify-center">
                         <Image
-                          src={getItemImageUrl(item.id, item.itemTier, item.itemEnchantment)}
+                          src={getItemImageUrl(item.id, 1, item.itemEnchantment)}
                           alt={item.itemName}
                           width={64}
                           height={64}

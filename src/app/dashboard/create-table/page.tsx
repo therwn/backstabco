@@ -521,7 +521,7 @@ export default function CreateTablePage() {
                         <div className="flex items-center space-x-4">
                           <div className="w-20 h-20 rounded flex items-center justify-center">
                             <Image
-                              src={getItemImageUrl(selectedItem.item.id, selectedItem.selectedTier, selectedItem.selectedEnchantment)}
+                              src={getItemImageUrl(selectedItem.item.id, 1, selectedItem.selectedEnchantment)}
                               alt={selectedItem.item.name}
                               width={80}
                               height={80}
