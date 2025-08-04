@@ -1,10 +1,24 @@
 import { createClient } from '@supabase/supabase-js'
 import { BlackMarketTable } from '@/types/albion'
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
+// Supabase client'ı oluştur
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
 
-const supabase = createClient(supabaseUrl, supabaseKey)
+console.log('DB: Supabase URL:', supabaseUrl ? 'SET' : 'NOT SET')
+console.log('DB: Supabase Service Key:', supabaseServiceKey ? 'SET' : 'NOT SET')
+
+if (!supabaseUrl || !supabaseServiceKey) {
+  console.error('DB: Missing Supabase environment variables')
+  throw new Error('Missing Supabase environment variables')
+}
+
+const supabase = createClient(supabaseUrl, supabaseServiceKey, {
+  auth: {
+    autoRefreshToken: false,
+    persistSession: false
+  }
+})
 
 export async function createTables() {
   const { error } = await supabase.rpc('create_tables_if_not_exists')
