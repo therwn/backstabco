@@ -216,20 +216,40 @@ export async function getTableDetails(tableId: string): Promise<BlackMarketTable
       console.log('DB: getTableDetails called with tableId:', tableId)
       console.log('DB: tableId type:', typeof tableId)
       console.log('DB: tableId value:', tableId)
+      console.log('DB: Environment check:')
+      console.log('  - NEXT_PUBLIC_SUPABASE_URL:', process.env.NEXT_PUBLIC_SUPABASE_URL ? 'SET' : 'NOT SET')
+      console.log('  - SUPABASE_SERVICE_ROLE_KEY:', process.env.SUPABASE_SERVICE_ROLE_KEY ? 'SET' : 'NOT SET')
+    }
+    
+    // ID'yi integer'a çevir (eğer string ise)
+    let numericTableId: number
+    try {
+      numericTableId = parseInt(tableId)
+      if (isNaN(numericTableId)) {
+        console.error('DB: Invalid table ID - not a number:', tableId)
+        return null
+      }
+    } catch (error) {
+      console.error('DB: Error parsing table ID:', error)
+      return null
+    }
+
+    if (process.env.NODE_ENV === 'development') {
+      console.log('DB: Parsed numeric table ID:', numericTableId)
     }
     
     // Ana tablo bilgilerini al
     const { data: tableData, error: tableError } = await supabase
       .from('black_market_tables')
       .select('*')
-      .eq('id', tableId)
+      .eq('id', numericTableId)
       .single()
 
     if (process.env.NODE_ENV === 'development') {
       console.log('DB: Table query result:', { 
         tableData: tableData ? 'Found' : 'Not found',
         tableError: tableError ? tableError.message : 'No error',
-        tableId: tableId
+        tableId: numericTableId
       })
     }
 
@@ -247,7 +267,7 @@ export async function getTableDetails(tableId: string): Promise<BlackMarketTable
 
     if (!tableData) {
       if (process.env.NODE_ENV === 'development') {
-        console.log('DB: No table data found for ID:', tableId)
+        console.log('DB: No table data found for ID:', numericTableId)
         // Tüm tabloları kontrol et
         const { data: allTables } = await supabase
           .from('black_market_tables')
@@ -270,7 +290,7 @@ export async function getTableDetails(tableId: string): Promise<BlackMarketTable
     const { data: itemsData, error: itemsError } = await supabase
       .from('black_market_items')
       .select('*')
-      .eq('table_id', tableId)
+      .eq('table_id', numericTableId)
 
     if (process.env.NODE_ENV === 'development') {
       console.log('DB: Items query result:', {
@@ -300,7 +320,7 @@ export async function getTableDetails(tableId: string): Promise<BlackMarketTable
           const { data: cityPricesData, error: cityPricesError } = await supabase
             .from('city_prices')
             .select('*')
-            .eq('table_id', tableId)
+            .eq('table_id', numericTableId)
             .eq('item_id', item.item_id)
 
           if (cityPricesError) {
@@ -318,6 +338,13 @@ export async function getTableDetails(tableId: string): Promise<BlackMarketTable
             }
           }
 
+          const cityPrices = cityPricesData.map(cp => ({
+            city: cp.city,
+            sellOrder: cp.sell_order,
+            buyOrder: cp.buy_order,
+            quantity: cp.quantity
+          }))
+
           return {
             id: item.item_id,
             itemName: item.item_name,
@@ -326,15 +353,10 @@ export async function getTableDetails(tableId: string): Promise<BlackMarketTable
             itemQuality: item.item_quality,
             buyPrice: item.buy_price,
             buyQuantity: item.buy_quantity,
-            cityPrices: cityPricesData.map(cp => ({
-              city: cp.city,
-              sellOrder: cp.sell_order,
-              buyOrder: cp.buy_order,
-              quantity: cp.quantity
-            }))
+            cityPrices
           }
-        } catch (itemError) {
-          console.error('DB: Error processing item', item.item_id, ':', itemError)
+        } catch (error) {
+          console.error('DB: Error processing item:', error)
           return {
             id: item.item_id,
             itemName: item.item_name,
@@ -369,7 +391,7 @@ export async function getTableDetails(tableId: string): Promise<BlackMarketTable
     return result
   } catch (error) {
     console.error('DB: Error in getTableDetails:', error)
-    throw error
+    return null
   }
 }
 
