@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import { ArrowLeft, Eye, Trash2, Edit, Save, X, Lock } from 'lucide-react'
+import { ArrowLeft, Eye, Trash2, Edit, Save, X, Lock, Search } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -10,7 +10,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useSession } from 'next-auth/react'
 import Logo from '@/assets/logo.svg'
 import Image from 'next/image'
-import { getItemImageUrl } from '@/lib/albion-api'
+import { getItemImageUrl, searchItems, AlbionItem } from '@/lib/albion-api'
 import { formatCurrency, formatCurrencyInput, parseCurrencyInput } from '@/lib/utils'
 
 interface TableItem {
@@ -85,6 +85,9 @@ export default function TableViewPage() {
   const [editData, setEditData] = useState<Table | null>(null)
   const [showAddItemModal, setShowAddItemModal] = useState(false)
   const [newItemName, setNewItemName] = useState('')
+  const [searchQuery, setSearchQuery] = useState('')
+  const [searchResults, setSearchResults] = useState<AlbionItem[]>([])
+  const [isSearching, setIsSearching] = useState(false)
 
   // Session kontrolü
   useEffect(() => {
@@ -233,6 +236,45 @@ export default function TableViewPage() {
   const addItem = () => {
     if (!editData) return
     setShowAddItemModal(true)
+  }
+
+  const handleSearch = async () => {
+    if (!searchQuery.trim()) return
+    
+    setIsSearching(true)
+    try {
+      const results = await searchItems(searchQuery)
+      setSearchResults(results)
+    } catch (error) {
+      console.error('Search error:', error)
+      setSearchResults([])
+    } finally {
+      setIsSearching(false)
+    }
+  }
+
+  const handleItemSelect = (item: AlbionItem) => {
+    if (!editData) return
+    
+    const newItem: TableItem = {
+      id: item.id,
+      itemName: item.name,
+      itemTier: item.tier,
+      itemEnchantment: 0,
+      itemQuality: 1,
+      buyPrice: 0,
+      buyQuantity: 0,
+      cityPrices: []
+    }
+    
+    setEditData({
+      ...editData,
+      items: [...editData.items, newItem]
+    })
+    
+    setShowAddItemModal(false)
+    setSearchQuery('')
+    setSearchResults([])
   }
 
   const confirmAddItem = () => {
@@ -445,28 +487,67 @@ export default function TableViewPage() {
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
               className="fixed inset-0 flex items-center justify-center z-[9999]"
             >
-              <div className="w-full max-w-md mx-4 bg-black-800 border border-gray-600 rounded-lg shadow-2xl p-6">
+              <div className="w-full max-w-4xl mx-4 bg-black-800 border border-gray-600 rounded-lg shadow-2xl p-6">
                 <div className="text-center mb-6">
-                  <h2 className="text-xl font-bold text-white mb-2">Yeni Item Ekle</h2>
-                  <p className="text-gray-400">Lütfen yeni item'ın adını girin.</p>
+                  <h2 className="text-xl font-bold text-white mb-2">Item Ekle</h2>
+                  <p className="text-gray-400">Lütfen item'ın adını veya ID'sini girin.</p>
                 </div>
                 <div className="space-y-4">
-                  <Input
-                    type="text"
-                    placeholder="Item adı..."
-                    value={newItemName}
-                    onChange={(e) => setNewItemName(e.target.value)}
-                    onKeyPress={(e) => e.key === 'Enter' && confirmAddItem()}
-                    className="w-full"
-                    autoFocus
-                  />
-                  <div className="flex space-x-3">
-                    <Button
+                  <div className="flex items-center space-x-2">
+                    <Search className="w-5 h-5 text-gray-400" />
+                    <Input
+                      type="text"
+                      placeholder="Item adı veya ID..."
+                      value={searchQuery}
+                      onChange={(e) => {
+                        setSearchQuery(e.target.value)
+                        if (e.target.value.trim()) {
+                          handleSearch()
+                        }
+                      }}
+                      onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
                       className="flex-1"
-                      onClick={confirmAddItem}
-                    >
-                      Ekle
-                    </Button>
+                      autoFocus
+                    />
+                    {isSearching && (
+                      <div className="w-5 h-5 border-2 border-[#F3B22D] border-t-transparent rounded-full animate-spin"></div>
+                    )}
+                  </div>
+                  
+                  {/* Search Results */}
+                  {searchResults.length > 0 && (
+                    <div className="max-h-96 overflow-y-auto space-y-2">
+                      {searchResults.map((item) => (
+                        <motion.div
+                          key={item.id}
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          className="flex items-center space-x-3 p-3 border border-gray-600 rounded-lg hover:border-[#F3B22D] cursor-pointer transition-colors"
+                          onClick={() => handleItemSelect(item)}
+                        >
+                          <div className="w-12 h-12 rounded flex items-center justify-center bg-gray-700">
+                            <Image
+                              src={getItemImageUrl(item.id)}
+                              alt={item.name}
+                              width={48}
+                              height={48}
+                              className="w-10 h-10 object-contain"
+                              onError={(e) => {
+                                const target = e.target as HTMLImageElement
+                                target.src = '/placeholder-item.png'
+                              }}
+                            />
+                          </div>
+                          <div className="flex-1">
+                            <div className="text-white font-medium">{item.name}</div>
+                            <div className="text-gray-400 text-sm">T{item.tier} • {item.category}</div>
+                          </div>
+                        </motion.div>
+                      ))}
+                    </div>
+                  )}
+                  
+                  <div className="flex space-x-3">
                     <Button
                       variant="outline"
                       className="flex-1 text-white border-white hover:bg-white hover:text-black-900"
