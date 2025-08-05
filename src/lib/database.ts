@@ -42,6 +42,9 @@ export async function createBlackMarketTable(
   userId: string
 ): Promise<any> {
   try {
+    // Discord kullanıcı adını al
+    const creatorName = await getDiscordUsername(userId)
+    
     // Create table
     const { data: table, error: tableError } = await supabase
       .from('black_market_tables')
@@ -49,6 +52,7 @@ export async function createBlackMarketTable(
         name,
         password,
         creator_id: userId,
+        creator_name: creatorName, // Discord kullanıcı adını da ekle
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       })
