@@ -24,6 +24,7 @@ export async function GET(
     //   return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     // }
 
+    // getTableDetails fonksiyonunu çağır
     const tableDetails = await getTableDetails(params.id)
     
     if (process.env.NODE_ENV === 'development') {
@@ -34,16 +35,31 @@ export async function GET(
           name: tableDetails.name,
           itemsCount: tableDetails.items?.length || 0
         })
+      } else {
+        console.log('GET: No table found for ID:', params.id)
       }
     }
     
     if (!tableDetails) {
+      if (process.env.NODE_ENV === 'development') {
+        console.log('GET: Returning 404 - Table not found')
+      }
       return NextResponse.json({ error: 'Table not found' }, { status: 404 })
+    }
+
+    if (process.env.NODE_ENV === 'development') {
+      console.log('GET: Successfully returning table data')
     }
 
     return NextResponse.json(tableDetails)
   } catch (error) {
     console.error('GET table details error:', error)
+    if (process.env.NODE_ENV === 'development') {
+      console.log('GET: Error details:', {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      })
+    }
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

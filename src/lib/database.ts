@@ -107,6 +107,30 @@ export async function createBlackMarketTable(
   }
 }
 
+// Discord kullanıcı adını al
+async function getDiscordUsername(discordId: string): Promise<string> {
+  try {
+    // Discord API'den kullanıcı bilgilerini al
+    const response = await fetch(`https://discord.com/api/v10/users/${discordId}`, {
+      headers: {
+        'Authorization': `Bot ${process.env.DISCORD_BOT_TOKEN}`,
+        'Content-Type': 'application/json'
+      }
+    })
+
+    if (response.ok) {
+      const user = await response.json()
+      return user.username || discordId
+    } else {
+      console.error('Discord API error:', response.status)
+      return discordId
+    }
+  } catch (error) {
+    console.error('Error fetching Discord username:', error)
+    return discordId
+  }
+}
+
 // Tüm tabloları getir (herkese açık)
 export async function getAllTables(): Promise<BlackMarketTable[]> {
   try {
@@ -150,14 +174,22 @@ export async function getAllTables(): Promise<BlackMarketTable[]> {
       throw error
     }
 
-    return data.map(table => ({
-      id: table.id,
-      name: table.name,
-      password: table.password,
-      creator: table.creator_id,
-      createdAt: table.created_at,
-      items: table.black_market_items || []
-    }))
+    // Her tablo için Discord kullanıcı adını al
+    const tablesWithUsernames = await Promise.all(
+      data.map(async (table) => {
+        const creatorName = await getDiscordUsername(table.creator_id)
+        return {
+          id: table.id,
+          name: table.name,
+          password: table.password,
+          creator: creatorName,
+          createdAt: table.created_at,
+          items: table.black_market_items || []
+        }
+      })
+    )
+
+    return tablesWithUsernames
   } catch (error) {
     console.error('Error in getAllTables:', error)
     throw error
