@@ -277,29 +277,6 @@ export default function TableViewPage() {
     setSearchResults([])
   }
 
-  const confirmAddItem = () => {
-    if (!editData || !newItemName.trim()) return
-    
-    const newItem: TableItem = {
-      id: `new-item-${Date.now()}`,
-      itemName: newItemName.trim(),
-      itemTier: 6,
-      itemEnchantment: 0,
-      itemQuality: 1,
-      buyPrice: 0,
-      buyQuantity: 0,
-      cityPrices: []
-    }
-    
-    setEditData({
-      ...editData,
-      items: [...editData.items, newItem]
-    })
-    
-    setShowAddItemModal(false)
-    setNewItemName('')
-  }
-
   const addCityToItem = (itemId: string) => {
     if (!editData) return
     setEditData({
