@@ -13,11 +13,27 @@ export default function AuthPage() {
   const router = useRouter()
 
   useEffect(() => {
-    if (session) {
+    // Debug logging (sadece development'ta)
+    if (process.env.NODE_ENV === 'development') {
+      console.log('Auth Page - Status:', status)
+      console.log('Auth Page - Session:', session)
+    }
+
+    // Session yükleniyor mu kontrol et
+    if (status === 'loading') {
+      return
+    }
+
+    // Session varsa dashboard'a yönlendir
+    if (status === 'authenticated' && session) {
+      if (process.env.NODE_ENV === 'development') {
+        console.log('Auth Page - Redirecting to dashboard')
+      }
       router.push('/dashboard')
     }
-  }, [session, router])
+  }, [session, status, router])
 
+  // Session yükleniyor
   if (status === 'loading') {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900 to-gray-900 flex items-center justify-center">
@@ -26,6 +42,22 @@ export default function AuthPage() {
           transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
           className="w-16 h-16 border-4 border-yellow-500 border-t-transparent rounded-full"
         />
+      </div>
+    )
+  }
+
+  // Session varsa dashboard'a yönlendir
+  if (status === 'authenticated' && session) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900 to-gray-900 flex items-center justify-center">
+        <div className="text-center">
+          <motion.div
+            animate={{ rotate: 360 }}
+            transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+            className="w-16 h-16 border-4 border-yellow-500 border-t-transparent rounded-full mx-auto mb-4"
+          />
+          <p className="text-white text-lg">Dashboard'a yönlendiriliyor...</p>
+        </div>
       </div>
     )
   }
@@ -98,7 +130,12 @@ export default function AuthPage() {
               className="space-y-4"
             >
               <button
-                onClick={() => signIn('discord', { callbackUrl: '/dashboard' })}
+                onClick={() => {
+                  if (process.env.NODE_ENV === 'development') {
+                    console.log('Auth Page - Discord sign in clicked')
+                  }
+                  signIn('discord', { callbackUrl: '/dashboard' })
+                }}
                 className="w-full bg-[#5865F2] hover:bg-[#4752C4] text-white font-medium py-4 px-6 rounded-lg flex items-center justify-center space-x-3 transition-all duration-200 transform hover:scale-105 active:scale-95"
               >
                 <Users className="w-5 h-5" />
