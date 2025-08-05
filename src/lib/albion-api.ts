@@ -11,6 +11,7 @@ export interface AlbionItem {
   subcategory: string
   imageUrl: string
   localizedNames: Record<string, string>
+  weaponType?: string
 }
 
 export interface MarketItem {

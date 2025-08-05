@@ -19,6 +19,7 @@ interface SpellSearchModalProps {
   onSpellSelect: (spell: AlbionSpell) => void
   placeholder?: string
   slot?: string
+  weaponType?: string
 }
 
 // Spell slot icons
@@ -42,7 +43,8 @@ export function SpellSearchModal({
   onClose, 
   onSpellSelect, 
   placeholder = "Spell ara...",
-  slot
+  slot,
+  weaponType
 }: SpellSearchModalProps) {
   const [query, setQuery] = useState('')
   const [spells, setSpells] = useState<AlbionSpell[]>([])
@@ -66,7 +68,8 @@ export function SpellSearchModal({
           const params = new URLSearchParams({
             q: query,
             ...(slot && { slot }),
-            ...(slot && { category: getCategoryFromSlot(slot) })
+            ...(slot && { category: getCategoryFromSlot(slot) }),
+            ...(weaponType && { weaponType })
           })
           
           const response = await fetch(`/api/spells?${params}`)

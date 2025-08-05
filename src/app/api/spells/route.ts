@@ -8,13 +8,23 @@ export async function GET(request: NextRequest) {
     const query = searchParams.get('q') || ''
     const slot = searchParams.get('slot') || ''
     const category = searchParams.get('category') || ''
+    const weaponType = searchParams.get('weaponType') || ''
 
     // Read spells.json file
     const spellsPath = path.join(process.cwd(), 'dataset', 'spells.json')
     const spellsData = fs.readFileSync(spellsPath, 'utf-8')
-    const spells = JSON.parse(spellsData)
+    const spellsJson = JSON.parse(spellsData)
 
-    // Filter spells based on query, slot, and category
+    // Extract spells from the complex structure
+    let spells: any[] = []
+    
+    if (spellsJson.spells && spellsJson.spells.spell) {
+      spells = Array.isArray(spellsJson.spells.spell) 
+        ? spellsJson.spells.spell 
+        : [spellsJson.spells.spell]
+    }
+
+    // Filter spells based on query, slot, category, and weapon type
     let filteredSpells = spells
 
     if (query) {
@@ -36,10 +46,23 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Limit results to 20
-    filteredSpells = filteredSpells.slice(0, 20)
+    if (weaponType) {
+      filteredSpells = filteredSpells.filter((spell: any) =>
+        spell.weaponType?.toLowerCase() === weaponType.toLowerCase()
+      )
+    }
 
-    return NextResponse.json(filteredSpells)
+    // Transform spells to match our interface
+    const transformedSpells = filteredSpells.map((spell: any) => ({
+      id: spell.id || spell.name,
+      name: spell.name,
+      category: spell.category || 'weapon',
+      slot: spell.slot || 'q',
+      description: spell.description || '',
+      weaponType: spell.weaponType
+    })).slice(0, 20)
+
+    return NextResponse.json(transformedSpells)
   } catch (error) {
     console.error('Error loading spells:', error)
     return NextResponse.json({ error: 'Failed to load spells' }, { status: 500 })

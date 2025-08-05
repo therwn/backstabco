@@ -77,7 +77,7 @@ export default function CreateBuildPage() {
   const [showItemModal, setShowItemModal] = useState(false)
   const [showSpellModal, setShowSpellModal] = useState(false)
   const [currentSelection, setCurrentSelection] = useState<{ type: 'equipment' | 'consumables', slot: string } | null>(null)
-  const [currentSpellSelection, setCurrentSpellSelection] = useState<{ category: string, slot: string } | null>(null)
+  const [currentSpellSelection, setCurrentSpellSelection] = useState<{ category: string, slot: string, weaponType?: string } | null>(null)
 
   // Session kontrolü
   useEffect(() => {
@@ -176,7 +176,9 @@ export default function CreateBuildPage() {
   }
 
   const openSpellModal = (category: string, slot: string) => {
-    setCurrentSpellSelection({ category, slot })
+    // Get weapon type from selected weapon
+    const weaponType = equipment.weapon?.weaponType || ''
+    setCurrentSpellSelection({ category, slot, weaponType })
     setShowSpellModal(true)
   }
 
@@ -527,6 +529,7 @@ export default function CreateBuildPage() {
         onSpellSelect={handleSpellSelect}
         placeholder="Spell ara..."
         slot={currentSpellSelection?.slot}
+        weaponType={currentSpellSelection?.weaponType}
       />
     </div>
   )
