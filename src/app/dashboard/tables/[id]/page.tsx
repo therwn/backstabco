@@ -602,7 +602,7 @@ export default function TableViewPage() {
                     key={item.id}
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="flex items-center space-x-3 p-3 border border-gray-600 rounded-lg hover:border-[#F3B22D] cursor-pointer transition-colors"
+                    className="flex items-center space-x-3 p-3 border border-gray-600 rounded-lg hover:border-white cursor-pointer transition-colors"
                     onClick={() => handleItemSelect(item)}
                   >
                     <div className="w-12 h-12 rounded flex items-center justify-center">
@@ -668,14 +668,15 @@ export default function TableViewPage() {
               />
               <h1 className="text-2xl font-bold text-white">{currentData.name}</h1>
               {currentData.password && (
-                <Lock className="w-5 h-5 text-[#F3B22D]" />
+                <Lock className="w-5 h-5 text-white" />
               )}
             </div>
           </div>
           <div className="flex items-center space-x-2">
             {isEditing ? (
               <Button
-                className="text-green-400 border-green-400 hover:bg-green-400 hover:text-white"
+                variant="outline"
+                className="text-white border-white hover:bg-white hover:text-black-900"
                 onClick={saveTable}
               >
                 <Save className="w-4 h-4 mr-2" />
@@ -693,18 +694,11 @@ export default function TableViewPage() {
             )}
             <Button 
               variant="outline" 
-              className="text-red-400 border-red-400 hover:bg-red-400 hover:text-white"
+              className="text-white border-white hover:bg-white hover:text-black-900"
               onClick={deleteTable}
             >
               <Trash2 className="w-4 h-4 mr-2" />
               Sil
-            </Button>
-            <Button 
-              variant="outline" 
-              className="text-gray-400 border-gray-400 hover:bg-gray-400 hover:text-white"
-              onClick={() => router.push('/dashboard')}
-            >
-              Çıkış Yap
             </Button>
           </div>
         </motion.div>
@@ -769,8 +763,9 @@ export default function TableViewPage() {
                   <CardTitle className="text-white">Item'lar ({currentData.items.length})</CardTitle>
                   {isEditing && (
                     <Button
+                      variant="outline"
                       onClick={addItem}
-                      className="text-blue-400 border-blue-400 hover:bg-blue-400 hover:text-white"
+                      className="text-white border-white hover:bg-white hover:text-black-900"
                     >
                       + Item Ekle
                     </Button>
@@ -838,7 +833,7 @@ export default function TableViewPage() {
                       {isEditing && (
                         <Button
                           variant="outline"
-                          className="text-red-400 border-red-400 hover:bg-red-400 hover:text-white"
+                          className="text-white border-white hover:bg-white hover:text-black-900"
                           onClick={() => removeItem(item.id)}
                         >
                           <Trash2 className="w-4 h-4" />
@@ -887,8 +882,9 @@ export default function TableViewPage() {
                         <div className="text-gray-400 text-sm">Şehir Fiyatları</div>
                         {isEditing && (
                           <Button
+                            variant="outline"
                             onClick={() => addCityToItem(item.id)}
-                            className="text-blue-400 border-blue-400 hover:bg-blue-400 hover:text-white text-xs"
+                            className="text-white border-white hover:bg-white hover:text-black-900 text-xs"
                           >
                             + Şehir Ekle
                           </Button>
@@ -899,8 +895,9 @@ export default function TableViewPage() {
                           <div key={cityIndex} className="border border-gray-600 rounded p-3 relative">
                             {isEditing && (
                               <Button
+                                variant="outline"
                                 onClick={() => removeCityFromItem(item.id, cityIndex)}
-                                className="absolute -top-2 -right-2 w-6 h-6 p-0 text-red-400 border-red-400 hover:bg-red-400 hover:text-white"
+                                className="absolute -top-2 -right-2 w-6 h-6 p-0 text-white border-white hover:bg-white hover:text-black-900"
                               >
                                 <X className="w-3 h-3" />
                               </Button>
