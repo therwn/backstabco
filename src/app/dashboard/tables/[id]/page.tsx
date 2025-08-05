@@ -573,13 +573,13 @@ export default function TableViewPage() {
                     className="border border-gray-600 rounded-lg p-4"
                   >
                     <div className="flex items-center space-x-4 mb-4">
-                      <div className="w-16 h-16 rounded flex items-center justify-center bg-gray-700">
+                      <div className="w-20 h-20 rounded flex items-center justify-center bg-gray-700">
                         <Image
                           src={getItemImageUrl(item.id, 1, item.itemEnchantment)}
                           alt={item.itemName}
-                          width={64}
-                          height={64}
-                          className="w-14 h-14 object-contain"
+                          width={80}
+                          height={80}
+                          className="w-18 h-18 object-contain"
                           onError={(e) => {
                             const target = e.target as HTMLImageElement
                             // İlk fallback: Sadece item ID ile

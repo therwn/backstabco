@@ -227,12 +227,16 @@ export default function CreateTablePage() {
   const updateTier = (itemId: string, tier: number) => {
     setSelectedItems(prev => prev.map(selectedItem => {
       if (selectedItem.item.id === itemId) {
+        // Tier değiştiğinde item ID'sini de güncelle
+        const newItemId = selectedItem.item.id.replace(/T\d+/, `T${tier}`)
+        
         return { 
           ...selectedItem, 
           selectedTier: tier,
           // Item'ı da güncelle ki görsel değişsin
           item: {
             ...selectedItem.item,
+            id: newItemId,
             tier: tier
           }
         }
@@ -245,12 +249,26 @@ export default function CreateTablePage() {
   const updateEnchantment = (itemId: string, enchantment: number) => {
     setSelectedItems(prev => prev.map(selectedItem => {
       if (selectedItem.item.id === itemId) {
+        // Enchantment değiştiğinde item ID'sini de güncelle (eğer enchantment > 0 ise)
+        let newItemId = selectedItem.item.id
+        if (enchantment > 0) {
+          // Mevcut enchantment suffix'ini kaldır ve yenisini ekle
+          newItemId = selectedItem.item.id.replace(/@\d+/, `@${enchantment}`)
+          if (!newItemId.includes('@')) {
+            newItemId = `${newItemId}@${enchantment}`
+          }
+        } else {
+          // Enchantment 0 ise suffix'i kaldır
+          newItemId = selectedItem.item.id.replace(/@\d+/, '')
+        }
+        
         return { 
           ...selectedItem, 
           selectedEnchantment: enchantment,
           // Item'ı da güncelle ki görsel değişsin
           item: {
             ...selectedItem.item,
+            id: newItemId,
             enchantment: enchantment
           }
         }
@@ -626,13 +644,13 @@ export default function CreateTablePage() {
                       {/* Item Header - Always Visible */}
                       <div className="flex items-center justify-between p-6">
                         <div className="flex items-center space-x-4">
-                          <div className="w-20 h-20 rounded flex items-center justify-center bg-gray-700">
+                          <div className="w-24 h-24 rounded flex items-center justify-center bg-gray-700">
                             <Image
                               src={getItemImageUrl(selectedItem.item.id, 1, selectedItem.selectedEnchantment)}
                               alt={selectedItem.item.name}
-                              width={80}
-                              height={80}
-                              className="w-18 h-18 object-contain"
+                              width={96}
+                              height={96}
+                              className="w-22 h-22 object-contain"
                               onError={(e) => {
                                 const target = e.target as HTMLImageElement
                                 // İlk fallback: Sadece item ID ile
