@@ -1,5 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
-import { BlackMarketTable } from '@/types/albion'
+import { BlackMarketTable, Build, BuildSkill, CreateBuildData, UpdateBuildData } from '@/types/albion'
 
 // Supabase client'ı oluştur
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
@@ -35,6 +35,298 @@ export async function createTables() {
   }
 }
 
+// Discord kullanıcı adını al
+async function getDiscordUsername(discordId: string): Promise<string> {
+  try {
+    // Discord API'den kullanıcı bilgilerini al
+    const response = await fetch(`https://discord.com/api/v10/users/${discordId}`, {
+      headers: {
+        'Authorization': `Bot ${process.env.DISCORD_BOT_TOKEN}`,
+        'Content-Type': 'application/json'
+      }
+    })
+
+    if (response.ok) {
+      const user = await response.json()
+      return user.username || discordId
+    } else {
+      console.error('Discord API error:', response.status)
+      return discordId
+    }
+  } catch (error) {
+    console.error('Error fetching Discord username:', error)
+    return discordId
+  }
+}
+
+// Build sistemi fonksiyonları
+export async function createBuild(buildData: CreateBuildData, userId: string): Promise<Build | null> {
+  try {
+    // Discord kullanıcı adını al
+    const creatorName = await getDiscordUsername(userId)
+    
+    // Build'i oluştur
+    const { data: build, error: buildError } = await supabase
+      .from('builds')
+      .insert({
+        name: buildData.name,
+        description: buildData.description || null,
+        content_type: buildData.contentType,
+        weapon_type: buildData.weaponType,
+        creator_id: userId,
+        creator_name: creatorName,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      })
+      .select()
+      .single()
+
+    if (buildError) {
+      console.error('Error creating build:', buildError)
+      throw buildError
+    }
+
+    // Skill'leri ekle
+    for (const skill of buildData.skills) {
+      const { error: skillError } = await supabase
+        .from('build_skills')
+        .insert({
+          build_id: build.id,
+          skill_type: skill.skillType,
+          skill_name: skill.skillName,
+          description: skill.description || null
+        })
+
+      if (skillError) {
+        console.error('Error inserting skill:', skillError)
+        throw skillError
+      }
+    }
+
+    // Oluşturulan build'i döndür
+    return await getBuildById(build.id.toString())
+  } catch (error) {
+    console.error('Error in createBuild:', error)
+    throw error
+  }
+}
+
+export async function getAllBuilds(): Promise<Build[]> {
+  try {
+    const { data, error } = await supabase
+      .from('builds')
+      .select(`
+        id,
+        name,
+        description,
+        content_type,
+        weapon_type,
+        creator_id,
+        creator_name,
+        created_at,
+        updated_at,
+        build_skills (
+          id,
+          skill_type,
+          skill_name,
+          description,
+          created_at
+        )
+      `)
+      .order('created_at', { ascending: false })
+
+    if (error) {
+      console.error('Error fetching all builds:', error)
+      throw error
+    }
+
+    return data.map(build => ({
+      id: build.id.toString(),
+      name: build.name,
+      description: build.description,
+      contentType: build.content_type,
+      weaponType: build.weapon_type,
+      creator: build.creator_id,
+      creatorName: build.creator_name,
+      createdAt: new Date(build.created_at),
+      updatedAt: new Date(build.updated_at),
+      skills: (build.build_skills || []).map(skill => ({
+        id: skill.id.toString(),
+        buildId: build.id.toString(),
+        skillType: skill.skill_type as BuildSkill['skillType'],
+        skillName: skill.skill_name,
+        description: skill.description,
+        createdAt: new Date(skill.created_at)
+      }))
+    }))
+  } catch (error) {
+    console.error('Error in getAllBuilds:', error)
+    throw error
+  }
+}
+
+export async function getBuildById(buildId: string): Promise<Build | null> {
+  try {
+    const { data, error } = await supabase
+      .from('builds')
+      .select(`
+        id,
+        name,
+        description,
+        content_type,
+        weapon_type,
+        creator_id,
+        creator_name,
+        created_at,
+        updated_at,
+        build_skills (
+          id,
+          skill_type,
+          skill_name,
+          description,
+          created_at
+        )
+      `)
+      .eq('id', buildId)
+      .single()
+
+    if (error) {
+      console.error('Error fetching build:', error)
+      return null
+    }
+
+    return {
+      id: data.id.toString(),
+      name: data.name,
+      description: data.description,
+      contentType: data.content_type,
+      weaponType: data.weapon_type,
+      creator: data.creator_id,
+      creatorName: data.creator_name,
+      createdAt: new Date(data.created_at),
+      updatedAt: new Date(data.updated_at),
+      skills: (data.build_skills || []).map(skill => ({
+        id: skill.id.toString(),
+        buildId: data.id.toString(),
+        skillType: skill.skill_type as BuildSkill['skillType'],
+        skillName: skill.skill_name,
+        description: skill.description,
+        createdAt: new Date(skill.created_at)
+      }))
+    }
+  } catch (error) {
+    console.error('Error in getBuildById:', error)
+    return null
+  }
+}
+
+export async function updateBuild(buildId: string, buildData: UpdateBuildData, userId: string): Promise<boolean> {
+  try {
+    // Build'in sahibi olduğunu kontrol et
+    const { data: existingBuild, error: checkError } = await supabase
+      .from('builds')
+      .select('id, creator_id')
+      .eq('id', buildId)
+      .eq('creator_id', userId)
+      .single()
+
+    if (checkError || !existingBuild) {
+      console.error('Build not found or unauthorized')
+      return false
+    }
+
+    // Build bilgilerini güncelle
+    const updateData: any = {
+      updated_at: new Date().toISOString()
+    }
+
+    if (buildData.name) updateData.name = buildData.name
+    if (buildData.description !== undefined) updateData.description = buildData.description
+    if (buildData.contentType) updateData.content_type = buildData.contentType
+    if (buildData.weaponType) updateData.weapon_type = buildData.weaponType
+
+    const { error: updateError } = await supabase
+      .from('builds')
+      .update(updateData)
+      .eq('id', buildId)
+
+    if (updateError) {
+      console.error('Error updating build:', updateError)
+      throw updateError
+    }
+
+    // Skill'leri güncelle (varsa)
+    if (buildData.skills) {
+      // Mevcut skill'leri sil
+      const { error: deleteSkillsError } = await supabase
+        .from('build_skills')
+        .delete()
+        .eq('build_id', buildId)
+
+      if (deleteSkillsError) {
+        console.error('Error deleting existing skills:', deleteSkillsError)
+        throw deleteSkillsError
+      }
+
+      // Yeni skill'leri ekle
+      for (const skill of buildData.skills) {
+        const { error: skillError } = await supabase
+          .from('build_skills')
+          .insert({
+            build_id: buildId,
+            skill_type: skill.skillType,
+            skill_name: skill.skillName,
+            description: skill.description || null
+          })
+
+        if (skillError) {
+          console.error('Error inserting skill:', skillError)
+          throw skillError
+        }
+      }
+    }
+
+    return true
+  } catch (error) {
+    console.error('Error in updateBuild:', error)
+    return false
+  }
+}
+
+export async function deleteBuild(buildId: string, userId: string): Promise<boolean> {
+  try {
+    // Build'in sahibi olduğunu kontrol et
+    const { data: existingBuild, error: checkError } = await supabase
+      .from('builds')
+      .select('id')
+      .eq('id', buildId)
+      .eq('creator_id', userId)
+      .single()
+
+    if (checkError || !existingBuild) {
+      console.error('Build not found or unauthorized')
+      return false
+    }
+
+    // Build'i sil (skill'ler CASCADE ile silinecek)
+    const { error: deleteError } = await supabase
+      .from('builds')
+      .delete()
+      .eq('id', buildId)
+
+    if (deleteError) {
+      console.error('Error deleting build:', deleteError)
+      throw deleteError
+    }
+
+    return true
+  } catch (error) {
+    console.error('Error in deleteBuild:', error)
+    return false
+  }
+}
+
+// Mevcut fonksiyonlar...
 export async function createBlackMarketTable(
   name: string,
   password: string | null,
@@ -92,30 +384,6 @@ export async function createBlackMarketTable(
   }
 }
 
-// Discord kullanıcı adını al
-async function getDiscordUsername(discordId: string): Promise<string> {
-  try {
-    // Discord API'den kullanıcı bilgilerini al
-    const response = await fetch(`https://discord.com/api/v10/users/${discordId}`, {
-      headers: {
-        'Authorization': `Bot ${process.env.DISCORD_BOT_TOKEN}`,
-        'Content-Type': 'application/json'
-      }
-    })
-
-    if (response.ok) {
-      const user = await response.json()
-      return user.username || discordId
-    } else {
-      console.error('Discord API error:', response.status)
-      return discordId
-    }
-  } catch (error) {
-    console.error('Error fetching Discord username:', error)
-    return discordId
-  }
-}
-
 // Tüm tabloları getir (herkese açık)
 export async function getAllTables(): Promise<BlackMarketTable[]> {
   try {
@@ -169,7 +437,16 @@ export async function getAllTables(): Promise<BlackMarketTable[]> {
           password: table.password,
           creator: creatorName,
           createdAt: table.created_at,
-          items: table.black_market_items || []
+          items: (table.black_market_items || []).map(item => ({
+            id: item.item_id,
+            itemName: item.item_name,
+            itemTier: item.item_tier,
+            itemEnchantment: item.item_enchantment,
+            itemQuality: item.item_quality,
+            buyPrice: item.buy_price,
+            buyQuantity: item.buy_quantity,
+            cityPrices: []
+          }))
         }
       })
     )
@@ -217,7 +494,16 @@ export async function getUserTables(userId: string): Promise<BlackMarketTable[]>
       password: table.password,
       creator: table.creator_id,
       createdAt: table.created_at,
-      items: table.black_market_items || []
+      items: (table.black_market_items || []).map(item => ({
+        id: item.item_id,
+        itemName: item.item_name,
+        itemTier: item.item_tier,
+        itemEnchantment: item.item_enchantment,
+        itemQuality: item.item_quality,
+        buyPrice: item.buy_price,
+        buyQuantity: item.buy_quantity,
+        cityPrices: []
+      }))
     }))
   } catch (error) {
     console.error('Error in getUserTables:', error)

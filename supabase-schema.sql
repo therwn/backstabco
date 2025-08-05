@@ -1,4 +1,6 @@
 -- Drop existing tables if they exist
+DROP TABLE IF EXISTS build_skills;
+DROP TABLE IF EXISTS builds;
 DROP TABLE IF EXISTS city_prices;
 DROP TABLE IF EXISTS black_market_items;
 DROP TABLE IF EXISTS black_market_tables;
@@ -39,16 +41,45 @@ CREATE TABLE city_prices (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
+-- Create builds table
+CREATE TABLE builds (
+    id SERIAL PRIMARY KEY,
+    name TEXT NOT NULL,
+    description TEXT,
+    content_type VARCHAR(100) NOT NULL, -- Solo PvP, Group PvE, ZvZ, vb.
+    weapon_type VARCHAR(100) NOT NULL, -- Fire Staff, Holy Staff, Sword, vb.
+    creator_id TEXT NOT NULL,
+    creator_name TEXT NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Create build_skills table
+CREATE TABLE build_skills (
+    id SERIAL PRIMARY KEY,
+    build_id INTEGER REFERENCES builds(id) ON DELETE CASCADE,
+    skill_type VARCHAR(50) NOT NULL, -- Q, W, E, Passive, Consumable, Mount
+    skill_name VARCHAR(255) NOT NULL,
+    description TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
 -- Create indexes
 CREATE INDEX idx_black_market_tables_creator_id ON black_market_tables(creator_id);
 CREATE INDEX idx_black_market_items_table_id ON black_market_items(table_id);
 CREATE INDEX idx_city_prices_table_id ON city_prices(table_id);
 CREATE INDEX idx_city_prices_item_id ON city_prices(item_id);
+CREATE INDEX idx_builds_creator_id ON builds(creator_id);
+CREATE INDEX idx_builds_content_type ON builds(content_type);
+CREATE INDEX idx_builds_weapon_type ON builds(weapon_type);
+CREATE INDEX idx_build_skills_build_id ON build_skills(build_id);
 
 -- Enable Row Level Security
 ALTER TABLE black_market_tables ENABLE ROW LEVEL SECURITY;
 ALTER TABLE black_market_items ENABLE ROW LEVEL SECURITY;
 ALTER TABLE city_prices ENABLE ROW LEVEL SECURITY;
+ALTER TABLE builds ENABLE ROW LEVEL SECURITY;
+ALTER TABLE build_skills ENABLE ROW LEVEL SECURITY;
 
 -- RLS Policies for black_market_tables
 CREATE POLICY "Users can view all tables" ON black_market_tables
@@ -121,6 +152,50 @@ CREATE POLICY "Users can delete city prices for their tables" ON city_prices
         EXISTS (
             SELECT 1 FROM black_market_tables 
             WHERE id = table_id 
+            AND creator_id = (auth.jwt() ->> 'discordId')
+        )
+    );
+
+-- RLS Policies for builds
+CREATE POLICY "Users can view all builds" ON builds
+    FOR SELECT USING (true);
+
+CREATE POLICY "Users can insert their own builds" ON builds
+    FOR INSERT WITH CHECK (creator_id = (auth.jwt() ->> 'discordId'));
+
+CREATE POLICY "Users can update their own builds" ON builds
+    FOR UPDATE USING (creator_id = (auth.jwt() ->> 'discordId'));
+
+CREATE POLICY "Users can delete their own builds" ON builds
+    FOR DELETE USING (creator_id = (auth.jwt() ->> 'discordId'));
+
+-- RLS Policies for build_skills
+CREATE POLICY "Users can view all build skills" ON build_skills
+    FOR SELECT USING (true);
+
+CREATE POLICY "Users can insert skills for their builds" ON build_skills
+    FOR INSERT WITH CHECK (
+        EXISTS (
+            SELECT 1 FROM builds 
+            WHERE id = build_id 
+            AND creator_id = (auth.jwt() ->> 'discordId')
+        )
+    );
+
+CREATE POLICY "Users can update skills for their builds" ON build_skills
+    FOR UPDATE USING (
+        EXISTS (
+            SELECT 1 FROM builds 
+            WHERE id = build_id 
+            AND creator_id = (auth.jwt() ->> 'discordId')
+        )
+    );
+
+CREATE POLICY "Users can delete skills for their builds" ON build_skills
+    FOR DELETE USING (
+        EXISTS (
+            SELECT 1 FROM builds 
+            WHERE id = build_id 
             AND creator_id = (auth.jwt() ->> 'discordId')
         )
     ); 

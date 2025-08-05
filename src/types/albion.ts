@@ -5,11 +5,7 @@ export interface AlbionItem {
   name: string
   tier: number
   category: string
-  subcategory: string
-  imageUrl: string
-  localizedNames: Record<string, string>
-  enchantment?: number
-  quality?: number
+  subcategory?: string
 }
 
 export interface MarketItem {
@@ -119,11 +115,167 @@ export interface CityPrice {
 export interface BlackMarketTable {
   id: string
   name: string
-  password: string
+  password: string | null
   creator: string
   createdAt: Date
-  items: BlackMarketItem[]
+  items: TableItem[]
 }
+
+export interface TableItem {
+  id: string
+  itemName: string
+  itemTier: number
+  itemEnchantment: number
+  itemQuality: number
+  buyPrice: number
+  buyQuantity: number
+  cityPrices: {
+    city: string
+    sellOrder: number
+    buyOrder: number
+    quantity: number
+  }[]
+}
+
+// Build sistemi için yeni tipler
+export interface Build {
+  id: string
+  name: string
+  description: string | null
+  contentType: string
+  weaponType: string
+  creator: string
+  creatorName: string
+  createdAt: Date
+  updatedAt: Date
+  skills: BuildSkill[]
+}
+
+export interface BuildSkill {
+  id: string
+  buildId: string
+  skillType: 'Q' | 'W' | 'E' | 'Passive' | 'Consumable' | 'Mount'
+  skillName: string
+  description: string | null
+  createdAt: Date
+}
+
+export interface CreateBuildData {
+  name: string
+  description?: string
+  contentType: string
+  weaponType: string
+  skills: Omit<BuildSkill, 'id' | 'buildId' | 'createdAt'>[]
+}
+
+export interface UpdateBuildData {
+  name?: string
+  description?: string
+  contentType?: string
+  weaponType?: string
+  skills?: Omit<BuildSkill, 'id' | 'buildId' | 'createdAt'>[]
+}
+
+// Content type ve weapon type seçenekleri
+export const CONTENT_TYPES = [
+  'Solo PvP',
+  'Group PvP', 
+  'ZvZ',
+  'Solo PvE',
+  'Group PvE',
+  'Fame Farm',
+  'Gathering',
+  'Crafting',
+  'Corrupted Dungeon',
+  'Crystal Arena',
+  'Hellgate',
+  'Mists',
+  'Open World',
+  'Small Scale',
+  'World Boss'
+] as const
+
+export const WEAPON_TYPES = [
+  'Fire Staff',
+  'Frost Staff', 
+  'Arcane Staff',
+  'Holy Staff',
+  'Nature Staff',
+  'Cursed Staff',
+  'Sword',
+  'Hammer',
+  'Mace',
+  'Axe',
+  'Spear',
+  'Quarter Staff',
+  'Crossbow',
+  'Bow',
+  'Dagger',
+  'Bloodletter',
+  'Battleaxe',
+  'Great Hammer',
+  'Great Axe',
+  'Great Sword',
+  'Great Nature Staff',
+  'Great Fire Staff',
+  'Great Frost Staff',
+  'Great Holy Staff',
+  'Great Cursed Staff',
+  'Great Arcane Staff',
+  'Spear',
+  'Pike',
+  'Glaive',
+  'Halberd',
+  'Trident',
+  'Scythe',
+  'Battle Bracers',
+  'Spiked Gauntlets',
+  'Claws',
+  'Wargloves',
+  'Knuckles',
+  'Fists',
+  'Shield',
+  'Torch',
+  'Mistpiercer',
+  'Cryptcandle',
+  'Facebreaker',
+  'Tome of Spells',
+  'Eye of Secrets',
+  'Muisak',
+  'Taproot',
+  'Lifecurse Staff',
+  'Shadowcaller',
+  'Demonic Staff',
+  'Lifetouch Staff',
+  'Wild Staff',
+  'Ironroot Staff',
+  'Druidic Staff',
+  'Blight Staff',
+  'Rampant Staff',
+  'Thorn Staff',
+  'Brimstone Staff',
+  'Wildfire Staff',
+  'Hoarfrost Staff',
+  'Icicle Staff',
+  'Permafrost Staff',
+  'Great Arcane Staff',
+  'Enigmatic Staff',
+  'Witchwork Staff',
+  'Occult Staff',
+  'Evensong',
+  'Dawnsong',
+  'Dusktide',
+  'Mistpiercer',
+  'Cryptcandle',
+  'Facebreaker',
+  'Tome of Spells',
+  'Eye of Secrets',
+  'Muisak',
+  'Taproot'
+] as const
+
+export type ContentType = typeof CONTENT_TYPES[number]
+export type WeaponType = typeof WEAPON_TYPES[number]
 
 export type AlbionCity = 'Bridgewatch' | 'Caerleon' | 'Fort Sterling' | 'Lymhurst' | 'Martlock' | 'Thetford' | 'Black Market'
 
