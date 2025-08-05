@@ -543,8 +543,8 @@ function extractSubcategory(itemId: string): string {
 
 // Item ikon URL'si oluştur
 export function getItemImageUrl(itemId: string, quality: number = 1, enchantment: number = 0): string {
-  // Item ID'yi doğru formata çevir
-  const formattedItemId = itemId.replace(/_/g, '%20')
+  // Item ID'yi doğru formata çevir - underscore'ları koru
+  const formattedItemId = itemId
   
   // Enchantment suffix'ini ekle
   const enchantmentSuffix = enchantment > 0 ? `@${enchantment}` : ''
@@ -552,12 +552,17 @@ export function getItemImageUrl(itemId: string, quality: number = 1, enchantment
   // Quality suffix'ini ekle
   const qualitySuffix = quality > 1 ? `_q${quality}` : ''
   
-  // Farklı URL formatlarını dene
+  // Albion Online API formatına göre URL oluştur
+  // Format: https://render.albiononline.com/v1/item/{itemId}@{enchantment}_q{quality}
+  // Alternatif format: https://render.albiononline.com/v1/item/{itemId}
   const imageUrl = `https://render.albiononline.com/v1/item/${formattedItemId}${enchantmentSuffix}${qualitySuffix}`
   
   // Debug için URL'i logla (sadece development'ta)
   if (process.env.NODE_ENV === 'development') {
     console.log('Generated image URL:', imageUrl)
+    console.log('Item ID:', itemId)
+    console.log('Quality:', quality)
+    console.log('Enchantment:', enchantment)
   }
   
   return imageUrl

@@ -575,8 +575,18 @@ export default function TableViewPage() {
                           className="w-14 h-14 object-contain"
                           onError={(e) => {
                             const target = e.target as HTMLImageElement
-                            target.src = '/placeholder-item.png'
-                            target.style.display = 'block'
+                            // İlk fallback: Sadece item ID ile
+                            if (!target.dataset.fallback1) {
+                              target.dataset.fallback1 = 'true'
+                              target.src = `https://render.albiononline.com/v1/item/${item.id}`
+                            } else if (!target.dataset.fallback2) {
+                              // İkinci fallback: Placeholder
+                              target.dataset.fallback2 = 'true'
+                              target.src = '/placeholder-item.png'
+                            } else {
+                              // Son fallback: Gizle
+                              target.style.display = 'none'
+                            }
                           }}
                         />
                       </div>
