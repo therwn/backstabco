@@ -24,14 +24,28 @@ interface Table {
 
 export default function DashboardPage() {
   const router = useRouter()
-  const { data: session } = useSession()
+  const { data: session, status } = useSession()
   const [tables, setTables] = useState<Table[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [showLogout, setShowLogout] = useState(false)
 
   useEffect(() => {
-    fetchTables()
-  }, [])
+    // Session yükleniyor mu kontrol et
+    if (status === 'loading') {
+      return
+    }
+
+    // Session yoksa auth sayfasına yönlendir
+    if (status === 'unauthenticated') {
+      router.push('/auth')
+      return
+    }
+
+    // Session varsa tabloları yükle
+    if (status === 'authenticated' && session) {
+      fetchTables()
+    }
+  }, [status, session, router])
 
   const fetchTables = async () => {
     try {
@@ -70,17 +84,45 @@ export default function DashboardPage() {
     }
   }
 
+  const handleSignOut = async () => {
+    try {
+      await signOut({ 
+        callbackUrl: '/auth',
+        redirect: true 
+      })
+    } catch (error) {
+      console.error('Sign out error:', error)
+      // Hata durumunda manuel yönlendirme
+      router.push('/auth')
+    }
+  }
+
   const isTableOwner = (table: Table) => {
     return session?.user?.discordId === table.creator
   }
 
-  if (!session) {
+  // Session yükleniyor
+  if (status === 'loading') {
     return (
       <div className="min-h-screen bg-gradient-to-br from-black-900 via-black-800 to-black-900 relative overflow-hidden">
         <div className="flex items-center justify-center min-h-screen">
           <div className="text-center">
             <div className="w-8 h-8 border-2 border-[#F3B22D] border-t-transparent rounded-full animate-spin mx-auto"></div>
             <p className="text-gray-400 mt-2">Yükleniyor...</p>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // Session yoksa auth sayfasına yönlendir
+  if (status === 'unauthenticated') {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-black-900 via-black-800 to-black-900 relative overflow-hidden">
+        <div className="flex items-center justify-center min-h-screen">
+          <div className="text-center">
+            <div className="w-8 h-8 border-2 border-[#F3B22D] border-t-transparent rounded-full animate-spin mx-auto"></div>
+            <p className="text-gray-400 mt-2">Yönlendiriliyor...</p>
           </div>
         </div>
       </div>
@@ -128,7 +170,7 @@ export default function DashboardPage() {
               onMouseLeave={() => setTimeout(() => setShowLogout(false), 500)}
             >
               <User className="w-4 h-4 mr-2" />
-              {session.user?.name || 'Kullanıcı'}
+              {session?.user?.name || 'Kullanıcı'}
             </Button>
             
             <AnimatePresence>
@@ -144,7 +186,7 @@ export default function DashboardPage() {
                   <Button
                     variant="ghost"
                     className="w-full text-red-400 hover:bg-red-400 hover:text-white whitespace-nowrap min-w-[140px]"
-                    onClick={() => signOut()}
+                    onClick={handleSignOut}
                   >
                     <LogOut className="w-4 h-4 mr-2 flex-shrink-0" />
                     Çıkış Yap

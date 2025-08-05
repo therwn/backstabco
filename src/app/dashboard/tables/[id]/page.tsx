@@ -76,7 +76,7 @@ const CustomAlert = ({ message, type, onClose }: { message: string; type: 'succe
 export default function TableViewPage() {
   const params = useParams()
   const router = useRouter()
-  const { data: session } = useSession()
+  const { data: session, status } = useSession()
   const [table, setTable] = useState<Table | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isEditing, setIsEditing] = useState(false)
@@ -85,11 +85,21 @@ export default function TableViewPage() {
   const [alert, setAlert] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null)
   const [editData, setEditData] = useState<Table | null>(null)
 
+  // Session kontrolü
   useEffect(() => {
-    if (params.id) {
+    if (status === 'loading') {
+      return
+    }
+
+    if (status === 'unauthenticated') {
+      router.push('/auth')
+      return
+    }
+
+    if (status === 'authenticated' && params.id) {
       fetchTableDetails(params.id as string)
     }
-  }, [params.id])
+  }, [status, params.id, router])
 
   // Show custom alert
   const showAlert = (message: string, type: 'success' | 'error' | 'info') => {
@@ -281,13 +291,28 @@ export default function TableViewPage() {
     }
   }
 
-  if (isLoading) {
+  // Session yükleniyor
+  if (status === 'loading') {
     return (
       <div className="min-h-screen bg-gradient-to-br from-black-900 via-black-800 to-black-900 relative overflow-hidden">
         <div className="flex items-center justify-center min-h-screen">
           <div className="text-center">
             <div className="w-8 h-8 border-2 border-[#F3B22D] border-t-transparent rounded-full animate-spin mx-auto"></div>
-            <p className="text-gray-400 mt-2">Tablo yükleniyor...</p>
+            <p className="text-gray-400 mt-2">Yükleniyor...</p>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // Session yoksa auth sayfasına yönlendir
+  if (status === 'unauthenticated') {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-black-900 via-black-800 to-black-900 relative overflow-hidden">
+        <div className="flex items-center justify-center min-h-screen">
+          <div className="text-center">
+            <div className="w-8 h-8 border-2 border-[#F3B22D] border-t-transparent rounded-full animate-spin mx-auto"></div>
+            <p className="text-gray-400 mt-2">Yönlendiriliyor...</p>
           </div>
         </div>
       </div>

@@ -75,7 +75,7 @@ const ItemSkeleton = () => (
 
 export default function CreateTablePage() {
   const router = useRouter()
-  const { data: session } = useSession()
+  const { data: session, status } = useSession()
   const searchRef = useRef<HTMLDivElement>(null)
   const [tableName, setTableName] = useState('')
   const [tablePassword, setTablePassword] = useState('')
@@ -86,6 +86,18 @@ export default function CreateTablePage() {
   const [showSearchModal, setShowSearchModal] = useState(false)
   const [globalBuySwitch, setGlobalBuySwitch] = useState(false)
   const [alert, setAlert] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null)
+
+  // Session kontrolü
+  useEffect(() => {
+    if (status === 'loading') {
+      return
+    }
+
+    if (status === 'unauthenticated') {
+      router.push('/auth')
+      return
+    }
+  }, [status, router])
 
   // Click outside to close search modal
   useEffect(() => {
@@ -103,6 +115,34 @@ export default function CreateTablePage() {
   const showAlert = (message: string, type: 'success' | 'error' | 'info') => {
     setAlert({ message, type })
     setTimeout(() => setAlert(null), 5000)
+  }
+
+  // Session yükleniyor
+  if (status === 'loading') {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-black-900 via-black-800 to-black-900 relative overflow-hidden">
+        <div className="flex items-center justify-center min-h-screen">
+          <div className="text-center">
+            <div className="w-8 h-8 border-2 border-[#F3B22D] border-t-transparent rounded-full animate-spin mx-auto"></div>
+            <p className="text-gray-400 mt-2">Yükleniyor...</p>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // Session yoksa auth sayfasına yönlendir
+  if (status === 'unauthenticated') {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-black-900 via-black-800 to-black-900 relative overflow-hidden">
+        <div className="flex items-center justify-center min-h-screen">
+          <div className="text-center">
+            <div className="w-8 h-8 border-2 border-[#F3B22D] border-t-transparent rounded-full animate-spin mx-auto"></div>
+            <p className="text-gray-400 mt-2">Yönlendiriliyor...</p>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   // Arama yap
