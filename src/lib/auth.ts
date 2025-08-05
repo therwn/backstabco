@@ -10,9 +10,11 @@ const DISCORD_BOT_TOKEN = process.env.DISCORD_BOT_TOKEN
 const DISCORD_ADMIN_ROLE_IDS = process.env.DISCORD_ADMIN_ROLE_IDS
 const NEXTAUTH_URL = process.env.NEXTAUTH_URL || 'http://localhost:3000'
 
-// Environment variables kontrolü
-if (!DISCORD_CLIENT_ID || !DISCORD_CLIENT_SECRET || !DISCORD_GUILD_ID || !DISCORD_BOT_TOKEN) {
-  throw new Error('Missing required Discord environment variables')
+// Environment variables kontrolü - sadece runtime'da kontrol et
+const validateEnvironmentVariables = () => {
+  if (!DISCORD_CLIENT_ID || !DISCORD_CLIENT_SECRET || !DISCORD_GUILD_ID || !DISCORD_BOT_TOKEN) {
+    throw new Error('Missing required Discord environment variables')
+  }
 }
 
 // Debug için environment variables'ları kontrol edelim (sadece development'ta)
@@ -28,8 +30,8 @@ if (process.env.NODE_ENV === 'development') {
 export const authOptions: NextAuthOptions = {
   providers: [
     DiscordProvider({
-      clientId: DISCORD_CLIENT_ID,
-      clientSecret: DISCORD_CLIENT_SECRET,
+      clientId: DISCORD_CLIENT_ID || '',
+      clientSecret: DISCORD_CLIENT_SECRET || '',
       authorization: {
         params: {
           scope: 'identify email guilds'
@@ -44,20 +46,28 @@ export const authOptions: NextAuthOptions = {
         if (discordId) {
           token.discordId = discordId
           
-          // Guild kontrolünü aktif et
-          const isInGuild = await checkUserInGuild(discordId)
-          if (!isInGuild) {
-            throw new Error('NOT_IN_GUILD')
+          // Environment variables kontrolü
+          try {
+            validateEnvironmentVariables()
+            
+            // Guild kontrolünü aktif et
+            const isInGuild = await checkUserInGuild(discordId)
+            if (!isInGuild) {
+              throw new Error('NOT_IN_GUILD')
+            }
+            
+            // Kullanıcının rolünü belirle
+            const userRole = await determineUserRole(discordId)
+            token.role = userRole
+          } catch (error) {
+            // Environment variables eksikse veya guild kontrolü başarısızsa player rolü ver
+            console.error('Auth error:', error)
+            token.role = 'player'
           }
-          
-          // Kullanıcının rolünü belirle
-          const userRole = await determineUserRole(discordId)
-          token.role = userRole
           
           if (process.env.NODE_ENV === 'development') {
             console.log('JWT Callback - Discord ID:', discordId)
             console.log('JWT Callback - Role:', token.role)
-            console.log('JWT Callback - Is in guild:', isInGuild)
           }
         }
       }
