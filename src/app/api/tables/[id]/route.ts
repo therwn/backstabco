@@ -8,6 +8,11 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
+    // Debug için log'lar ekle
+    if (process.env.NODE_ENV === 'development') {
+      console.log('GET: Requesting table ID:', params.id)
+    }
+
     // Tablo görüntüleme için authentication gerekli değil - herkese açık
     // const session = await getServerSession(authOptions)
     // if (!session?.user?.discordId) {
@@ -15,6 +20,10 @@ export async function GET(
     // }
 
     const tableDetails = await getTableDetails(params.id)
+    
+    if (process.env.NODE_ENV === 'development') {
+      console.log('GET: Table details result:', tableDetails ? 'Found' : 'Not found')
+    }
     
     if (!tableDetails) {
       return NextResponse.json({ error: 'Table not found' }, { status: 404 })

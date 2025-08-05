@@ -186,6 +186,10 @@ export async function getUserTables(userId: string): Promise<BlackMarketTable[]>
 // Tablo detaylarını getir (herkese açık)
 export async function getTableDetails(tableId: string): Promise<BlackMarketTable | null> {
   try {
+    // Debug için log'lar ekle
+    if (process.env.NODE_ENV === 'development') {
+      console.log('DB: getTableDetails called with tableId:', tableId)
+    }
     
     // Ana tablo bilgilerini al
     const { data: tableData, error: tableError } = await supabase
@@ -194,13 +198,24 @@ export async function getTableDetails(tableId: string): Promise<BlackMarketTable
       .eq('id', tableId)
       .single()
 
+    if (process.env.NODE_ENV === 'development') {
+      console.log('DB: Table query result:', { tableData, tableError })
+    }
+
     if (tableError) {
       console.error('DB: Table query error:', tableError)
       return null
     }
 
     if (!tableData) {
+      if (process.env.NODE_ENV === 'development') {
+        console.log('DB: No table data found for ID:', tableId)
+      }
       return null
+    }
+
+    if (process.env.NODE_ENV === 'development') {
+      console.log('DB: Table found:', tableData)
     }
 
     // Item'ları al

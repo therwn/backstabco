@@ -5,11 +5,11 @@ import { getAllTables, createBlackMarketTable } from '@/lib/database'
 
 export async function GET() {
   try {
-    const session = await getServerSession(authOptions)
-    
-    if (!session?.user?.discordId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    // Tablo listesi herkese açık olmalı
+    // const session = await getServerSession(authOptions)
+    // if (!session?.user?.discordId) {
+    //   return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    // }
 
     const tables = await getAllTables()
     return NextResponse.json(tables)
