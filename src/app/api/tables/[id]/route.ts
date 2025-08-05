@@ -8,12 +8,11 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
-    const session = await getServerSession(authOptions)
-    
-    // Tablo görüntüleme için authentication gerekli
-    if (!session?.user?.discordId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    // Tablo görüntüleme için authentication gerekli değil - herkese açık
+    // const session = await getServerSession(authOptions)
+    // if (!session?.user?.discordId) {
+    //   return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    // }
 
     const tableDetails = await getTableDetails(params.id)
     

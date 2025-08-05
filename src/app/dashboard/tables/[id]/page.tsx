@@ -134,6 +134,13 @@ export default function TableViewPage() {
   }
 
   const checkPassword = () => {
+    // Debug için log'lar ekle
+    if (process.env.NODE_ENV === 'development') {
+      console.log('Password check - Input password:', password)
+      console.log('Password check - Table password:', table?.password)
+      console.log('Password check - Passwords match:', password === table?.password)
+    }
+    
     if (table && table.password && password === table.password) {
       setShowPasswordModal(false)
       setPassword('')
