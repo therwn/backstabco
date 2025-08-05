@@ -83,6 +83,8 @@ export default function TableViewPage() {
   const [password, setPassword] = useState('')
   const [alert, setAlert] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null)
   const [editData, setEditData] = useState<Table | null>(null)
+  const [showAddItemModal, setShowAddItemModal] = useState(false)
+  const [newItemName, setNewItemName] = useState('')
 
   // Session kontrolü
   useEffect(() => {
@@ -230,9 +232,15 @@ export default function TableViewPage() {
 
   const addItem = () => {
     if (!editData) return
+    setShowAddItemModal(true)
+  }
+
+  const confirmAddItem = () => {
+    if (!editData || !newItemName.trim()) return
+    
     const newItem: TableItem = {
       id: `new-item-${Date.now()}`,
-      itemName: 'Yeni Item',
+      itemName: newItemName.trim(),
       itemTier: 6,
       itemEnchantment: 0,
       itemQuality: 1,
@@ -240,10 +248,14 @@ export default function TableViewPage() {
       buyQuantity: 0,
       cityPrices: []
     }
+    
     setEditData({
       ...editData,
       items: [...editData.items, newItem]
     })
+    
+    setShowAddItemModal(false)
+    setNewItemName('')
   }
 
   const addCityToItem = (itemId: string) => {
@@ -405,6 +417,60 @@ export default function TableViewPage() {
                         setShowPasswordModal(false)
                         router.push('/dashboard')
                       }}
+                    >
+                      İptal
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
+      {/* Add Item Modal */}
+      <AnimatePresence>
+        {showAddItemModal && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[9998]"
+              onClick={() => setShowAddItemModal(false)}
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="fixed inset-0 flex items-center justify-center z-[9999]"
+            >
+              <div className="w-full max-w-md mx-4 bg-black-800 border border-gray-600 rounded-lg shadow-2xl p-6">
+                <div className="text-center mb-6">
+                  <h2 className="text-xl font-bold text-white mb-2">Yeni Item Ekle</h2>
+                  <p className="text-gray-400">Lütfen yeni item'ın adını girin.</p>
+                </div>
+                <div className="space-y-4">
+                  <Input
+                    type="text"
+                    placeholder="Item adı..."
+                    value={newItemName}
+                    onChange={(e) => setNewItemName(e.target.value)}
+                    onKeyPress={(e) => e.key === 'Enter' && confirmAddItem()}
+                    className="w-full"
+                    autoFocus
+                  />
+                  <div className="flex space-x-3">
+                    <Button
+                      className="flex-1"
+                      onClick={confirmAddItem}
+                    >
+                      Ekle
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="flex-1 text-white border-white hover:bg-white hover:text-black-900"
+                      onClick={() => setShowAddItemModal(false)}
                     >
                       İptal
                     </Button>
