@@ -678,32 +678,21 @@ export default function CreateTablePage() {
                                       whileHover={{ backgroundColor: '#374151' }}
                                       onClick={() => handleItemSelect(item)}
                                     >
-                                      <div className="w-16 h-16 rounded flex items-center justify-center bg-gray-700">
-                                        <Image
-                                          src={getItemImageUrl(item.id)}
-                                          alt={item.name}
-                                          width={64}
-                                          height={64}
-                                          className="w-14 h-14 object-contain"
+                                      <div className="w-16 h-16 rounded flex items-center justify-center">
+                                        <Image 
+                                          src={getItemImageUrl(item.id)} 
+                                          alt={item.name} 
+                                          width={64} 
+                                          height={64} 
+                                          className="w-14 h-14 object-contain" 
                                           onError={(e) => {
                                             const target = e.target as HTMLImageElement
-                                            // İlk fallback: Sadece item ID ile
-                                            if (!target.dataset.fallback1) {
-                                              target.dataset.fallback1 = 'true'
-                                              target.src = `https://render.albiononline.com/v1/item/${item.id}`
-                                            } else if (!target.dataset.fallback2) {
-                                              // İkinci fallback: Placeholder
-                                              target.dataset.fallback2 = 'true'
-                                              target.src = '/placeholder-item.png'
-                                            } else {
-                                              // Son fallback: Gizle
-                                              target.style.display = 'none'
-                                            }
+                                            target.src = '/placeholder-item.png'
                                           }}
                                         />
                                       </div>
                                       <div className="flex-1">
-                                        <div className="text-white font-medium text-lg">{item.name}</div>
+                                        <div className="text-white font-medium">{item.name}</div>
                                         <div className="text-gray-400 text-sm">T{item.tier} • {item.category}</div>
                                       </div>
                                       <Plus className="w-5 h-5 text-[#F3B22D]" />
@@ -755,27 +744,16 @@ export default function CreateTablePage() {
                       {/* Item Header - Always Visible */}
                       <div className="flex items-center justify-between p-6">
                         <div className="flex items-center space-x-4">
-                          <div className="w-24 h-24 rounded flex items-center justify-center bg-gray-700">
-                            <Image
-                              src={getItemImageUrl(selectedItem.item.id, 1, selectedItem.selectedEnchantment)}
-                              alt={selectedItem.item.name}
-                              width={96}
-                              height={96}
-                              className="w-22 h-22 object-contain"
+                          <div className="w-24 h-24 rounded flex items-center justify-center">
+                            <Image 
+                              src={getItemImageUrl(selectedItem.item.id)} 
+                              alt={selectedItem.item.name} 
+                              width={96} 
+                              height={96} 
+                              className="w-22 h-22 object-contain" 
                               onError={(e) => {
                                 const target = e.target as HTMLImageElement
-                                // İlk fallback: Sadece item ID ile
-                                if (!target.dataset.fallback1) {
-                                  target.dataset.fallback1 = 'true'
-                                  target.src = `https://render.albiononline.com/v1/item/${selectedItem.item.id}`
-                                } else if (!target.dataset.fallback2) {
-                                  // İkinci fallback: Placeholder
-                                  target.dataset.fallback2 = 'true'
-                                  target.src = '/placeholder-item.png'
-                                } else {
-                                  // Son fallback: Gizle
-                                  target.style.display = 'none'
-                                }
+                                target.src = '/placeholder-item.png'
                               }}
                             />
                           </div>

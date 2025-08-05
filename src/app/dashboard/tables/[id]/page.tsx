@@ -605,18 +605,8 @@ export default function TableViewPage() {
                     className="flex items-center space-x-3 p-3 border border-gray-600 rounded-lg hover:border-[#F3B22D] cursor-pointer transition-colors"
                     onClick={() => handleItemSelect(item)}
                   >
-                    <div className="w-12 h-12 rounded flex items-center justify-center bg-gray-700">
-                      <Image
-                        src={getItemImageUrl(item.id)}
-                        alt={item.name}
-                        width={48}
-                        height={48}
-                        className="w-10 h-10 object-contain"
-                        onError={(e) => {
-                          const target = e.target as HTMLImageElement
-                          target.src = '/placeholder-item.png'
-                        }}
-                      />
+                    <div className="w-12 h-12 rounded flex items-center justify-center">
+                      <Image src={getItemImageUrl(item.id)} alt={item.name} width={48} height={48} className="w-10 h-10 object-contain" onError={(e) => { const target = e.target as HTMLImageElement; target.src = '/placeholder-item.png'; }} />
                     </div>
                     <div className="flex-1">
                       <div className="text-white font-medium">{item.name}</div>
@@ -797,27 +787,16 @@ export default function TableViewPage() {
                     className="border border-gray-600 rounded-lg p-4"
                   >
                     <div className="flex items-center space-x-4 mb-4">
-                      <div className="w-20 h-20 rounded flex items-center justify-center bg-gray-700">
-                        <Image
-                          src={getItemImageUrl(item.id, 1, item.itemEnchantment)}
-                          alt={item.itemName}
-                          width={80}
-                          height={80}
-                          className="w-18 h-18 object-contain"
+                      <div className="w-20 h-20 rounded flex items-center justify-center">
+                        <Image 
+                          src={getItemImageUrl(item.id)} 
+                          alt={item.itemName} 
+                          width={80} 
+                          height={80} 
+                          className="w-18 h-18 object-contain" 
                           onError={(e) => {
                             const target = e.target as HTMLImageElement
-                            // İlk fallback: Sadece item ID ile
-                            if (!target.dataset.fallback1) {
-                              target.dataset.fallback1 = 'true'
-                              target.src = `https://render.albiononline.com/v1/item/${item.id}`
-                            } else if (!target.dataset.fallback2) {
-                              // İkinci fallback: Placeholder
-                              target.dataset.fallback2 = 'true'
-                              target.src = '/placeholder-item.png'
-                            } else {
-                              // Son fallback: Gizle
-                              target.style.display = 'none'
-                            }
+                            target.src = '/placeholder-item.png'
                           }}
                         />
                       </div>

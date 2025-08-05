@@ -16,8 +16,16 @@ const supabase = createClient(supabaseUrl, supabaseServiceKey, {
   },
   db: {
     schema: 'public'
+  },
+  global: {
+    headers: {
+      'X-Client-Info': 'supabase-js/2.38.0'
+    }
   }
 })
+
+// RLS'yi bypass etmek için service role key kullanıyoruz
+// Bu sayede tüm tabloları okuyabiliriz
 
 export async function createTables() {
   const { error } = await supabase.rpc('create_tables_if_not_exists')

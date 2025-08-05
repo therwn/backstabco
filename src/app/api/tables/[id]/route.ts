@@ -11,6 +11,11 @@ export async function GET(
     // Debug için log'lar ekle
     if (process.env.NODE_ENV === 'development') {
       console.log('GET: Requesting table ID:', params.id)
+      console.log('GET: Table ID type:', typeof params.id)
+      console.log('GET: Table ID value:', params.id)
+      console.log('GET: Environment variables check:')
+      console.log('  - NEXT_PUBLIC_SUPABASE_URL:', process.env.NEXT_PUBLIC_SUPABASE_URL ? 'SET' : 'NOT SET')
+      console.log('  - SUPABASE_SERVICE_ROLE_KEY:', process.env.SUPABASE_SERVICE_ROLE_KEY ? 'SET' : 'NOT SET')
     }
 
     // Tablo görüntüleme için authentication gerekli değil - herkese açık
@@ -23,6 +28,13 @@ export async function GET(
     
     if (process.env.NODE_ENV === 'development') {
       console.log('GET: Table details result:', tableDetails ? 'Found' : 'Not found')
+      if (tableDetails) {
+        console.log('GET: Table details:', {
+          id: tableDetails.id,
+          name: tableDetails.name,
+          itemsCount: tableDetails.items?.length || 0
+        })
+      }
     }
     
     if (!tableDetails) {
