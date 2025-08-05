@@ -43,7 +43,8 @@ export async function POST(request: NextRequest) {
       name,
       password,
       items,
-      session.user.discordId
+      session.user.discordId,
+      session.user.name || 'Unknown User'
     )
 
     if (process.env.NODE_ENV === 'development') {

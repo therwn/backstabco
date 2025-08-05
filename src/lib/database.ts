@@ -28,7 +28,8 @@ export async function createBlackMarketTable(
   name: string,
   password: string | null,
   items: any[],
-  userId: string
+  userId: string,
+  creatorName?: string
 ): Promise<any> {
   try {
     // Create table
@@ -38,6 +39,7 @@ export async function createBlackMarketTable(
         name,
         password,
         creator_id: userId,
+        creator_name: creatorName || 'Unknown User',
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       })
