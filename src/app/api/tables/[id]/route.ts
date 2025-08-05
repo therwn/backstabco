@@ -54,15 +54,23 @@ export async function PUT(
     // Sadece development'ta log
     if (process.env.NODE_ENV === 'development') {
       console.log('PUT: Session:', session?.user)
+      console.log('PUT: User role:', session.user.role)
       console.log('PUT: Request body:', body)
       console.log('PUT: Using discordId:', session.user.discordId)
+    }
+
+    // Admin kontrolü - admin kullanıcılar tüm tabloları düzenleyebilir
+    const isAdmin = session.user.role === 'admin'
+    
+    if (process.env.NODE_ENV === 'development') {
+      console.log('PUT: Is admin:', isAdmin)
     }
 
     const success = await updateTable(params.id, session.user.discordId, {
       name,
       password: password || null,
       items
-    })
+    }, isAdmin) // Admin yetkisi parametresi ekle
 
     if (process.env.NODE_ENV === 'development') {
       console.log('PUT: Update result:', success)
@@ -91,7 +99,15 @@ export async function DELETE(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const success = await deleteTable(params.id, session.user.discordId)
+    // Admin kontrolü - admin kullanıcılar tüm tabloları silebilir
+    const isAdmin = session.user.role === 'admin'
+    
+    if (process.env.NODE_ENV === 'development') {
+      console.log('DELETE: User role:', session.user.role)
+      console.log('DELETE: Is admin:', isAdmin)
+    }
+
+    const success = await deleteTable(params.id, session.user.discordId, isAdmin) // Admin yetkisi parametresi ekle
     
     if (success) {
       return NextResponse.json({ success: true })

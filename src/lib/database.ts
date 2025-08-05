@@ -368,32 +368,51 @@ export async function getTableDetails(tableId: string): Promise<BlackMarketTable
 export async function updateTable(
   tableId: string, 
   userId: string, 
-  updateData: { name: string; password: string | null; items: any[] }
+  updateData: { name: string; password: string | null; items: any[] },
+  isAdmin: boolean = false
 ): Promise<boolean> {
   try {
     // Sadece development'ta log
     if (process.env.NODE_ENV === 'development') {
-      console.log('DB: updateTable called with:', { tableId, userId })
+      console.log('DB: updateTable called with:', { tableId, userId, isAdmin })
     }
     
-    // Tablo sahibi kontrolü
-    const { data: existingTable, error: checkError } = await supabase
-      .from('black_market_tables')
-      .select('id, creator_id')
-      .eq('id', tableId)
-      .eq('creator_id', userId)
-      .single()
+    // Tablo sahibi kontrolü (admin değilse)
+    if (!isAdmin) {
+      const { data: existingTable, error: checkError } = await supabase
+        .from('black_market_tables')
+        .select('id, creator_id')
+        .eq('id', tableId)
+        .eq('creator_id', userId)
+        .single()
 
-    if (process.env.NODE_ENV === 'development') {
-      console.log('DB: Existing table check:', { existingTable, checkError })
-    }
-
-    if (checkError || !existingTable) {
-      console.error('DB: Table not found or unauthorized')
       if (process.env.NODE_ENV === 'development') {
-        console.error('DB: Looking for tableId:', tableId, 'userId:', userId)
+        console.log('DB: Existing table check:', { existingTable, checkError })
       }
-      return false
+
+      if (checkError || !existingTable) {
+        console.error('DB: Table not found or unauthorized')
+        if (process.env.NODE_ENV === 'development') {
+          console.error('DB: Looking for tableId:', tableId, 'userId:', userId)
+        }
+        return false
+      }
+    } else {
+      // Admin için sadece tablonun var olduğunu kontrol et
+      const { data: existingTable, error: checkError } = await supabase
+        .from('black_market_tables')
+        .select('id')
+        .eq('id', tableId)
+        .single()
+
+      if (process.env.NODE_ENV === 'development') {
+        console.log('DB: Admin table check:', { existingTable, checkError })
+      }
+
+      if (checkError || !existingTable) {
+        console.error('DB: Table not found')
+        return false
+      }
     }
 
     if (process.env.NODE_ENV === 'development') {
@@ -500,19 +519,33 @@ export async function updateTable(
   }
 }
 
-export async function deleteTable(tableId: string, userId: string): Promise<boolean> {
+export async function deleteTable(tableId: string, userId: string, isAdmin: boolean = false): Promise<boolean> {
   try {
-    // Tablo sahibi kontrolü
-    const { data: existingTable, error: checkError } = await supabase
-      .from('black_market_tables')
-      .select('id')
-      .eq('id', tableId)
-      .eq('creator_id', userId)
-      .single()
+    // Tablo sahibi kontrolü (admin değilse)
+    if (!isAdmin) {
+      const { data: existingTable, error: checkError } = await supabase
+        .from('black_market_tables')
+        .select('id')
+        .eq('id', tableId)
+        .eq('creator_id', userId)
+        .single()
 
-    if (checkError || !existingTable) {
-      console.error('Table not found or unauthorized')
-      return false
+      if (checkError || !existingTable) {
+        console.error('Table not found or unauthorized')
+        return false
+      }
+    } else {
+      // Admin için sadece tablonun var olduğunu kontrol et
+      const { data: existingTable, error: checkError } = await supabase
+        .from('black_market_tables')
+        .select('id')
+        .eq('id', tableId)
+        .single()
+
+      if (checkError || !existingTable) {
+        console.error('Table not found')
+        return false
+      }
     }
 
     // City price'ları sil

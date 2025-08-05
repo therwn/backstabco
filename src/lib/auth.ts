@@ -6,10 +6,12 @@ import { User } from '@/types/albion'
 const DISCORD_CLIENT_ID = process.env.DISCORD_CLIENT_ID
 const DISCORD_CLIENT_SECRET = process.env.DISCORD_CLIENT_SECRET
 const DISCORD_GUILD_ID = process.env.DISCORD_GUILD_ID
+const DISCORD_BOT_TOKEN = process.env.DISCORD_BOT_TOKEN
+const DISCORD_ADMIN_ROLE_IDS = process.env.DISCORD_ADMIN_ROLE_IDS
 const NEXTAUTH_URL = process.env.NEXTAUTH_URL || 'http://localhost:3000'
 
 // Environment variables kontrolü
-if (!DISCORD_CLIENT_ID || !DISCORD_CLIENT_SECRET || !DISCORD_GUILD_ID) {
+if (!DISCORD_CLIENT_ID || !DISCORD_CLIENT_SECRET || !DISCORD_GUILD_ID || !DISCORD_BOT_TOKEN) {
   throw new Error('Missing required Discord environment variables')
 }
 
@@ -18,6 +20,8 @@ if (process.env.NODE_ENV === 'development') {
   console.log('DISCORD_CLIENT_ID:', DISCORD_CLIENT_ID ? 'SET' : 'NOT SET')
   console.log('DISCORD_CLIENT_SECRET:', DISCORD_CLIENT_SECRET ? 'SET' : 'NOT SET')
   console.log('DISCORD_GUILD_ID:', DISCORD_GUILD_ID ? 'SET' : 'NOT SET')
+  console.log('DISCORD_BOT_TOKEN:', DISCORD_BOT_TOKEN ? 'SET' : 'NOT SET')
+  console.log('DISCORD_ADMIN_ROLE_IDS:', DISCORD_ADMIN_ROLE_IDS ? 'SET' : 'NOT SET')
   console.log('NEXTAUTH_URL:', NEXTAUTH_URL)
 }
 
@@ -40,18 +44,20 @@ export const authOptions: NextAuthOptions = {
         if (discordId) {
           token.discordId = discordId
           
-          // Geçici olarak guild kontrolünü devre dışı bırak
-          // const isInGuild = await checkUserInGuild(discordId)
-          // if (!isInGuild) {
-          //   throw new Error('NOT_IN_GUILD')
-          // }
+          // Guild kontrolünü aktif et
+          const isInGuild = await checkUserInGuild(discordId)
+          if (!isInGuild) {
+            throw new Error('NOT_IN_GUILD')
+          }
           
-          // Basit role ataması
-          token.role = 'player'
+          // Kullanıcının rolünü belirle
+          const userRole = await determineUserRole(discordId)
+          token.role = userRole
           
           if (process.env.NODE_ENV === 'development') {
             console.log('JWT Callback - Discord ID:', discordId)
             console.log('JWT Callback - Role:', token.role)
+            console.log('JWT Callback - Is in guild:', isInGuild)
           }
         }
       }
@@ -82,13 +88,13 @@ export const authOptions: NextAuthOptions = {
   debug: process.env.NODE_ENV === 'development' // Sadece development'ta debug
 }
 
-// Guild kontrolü fonksiyonu geçici olarak devre dışı
+// Guild kontrolü fonksiyonu
 async function checkUserInGuild(discordId: string): Promise<boolean> {
   try {
     // Discord API'den kullanıcının guild'lerini al
     const response = await fetch(`https://discord.com/api/v10/users/@me/guilds`, {
       headers: {
-        'Authorization': `Bearer ${process.env.DISCORD_BOT_TOKEN}`,
+        'Authorization': `Bearer ${DISCORD_BOT_TOKEN}`,
         'Content-Type': 'application/json'
       }
     })
@@ -120,7 +126,7 @@ async function determineUserRole(discordId: string): Promise<'admin' | 'player'>
     // Discord API'den kullanıcının guild'deki rollerini al
     const response = await fetch(`https://discord.com/api/v10/guilds/${DISCORD_GUILD_ID}/members/${discordId}`, {
       headers: {
-        'Authorization': `Bot ${process.env.DISCORD_BOT_TOKEN}`,
+        'Authorization': `Bot ${DISCORD_BOT_TOKEN}`,
         'Content-Type': 'application/json'
       }
     })
@@ -131,7 +137,7 @@ async function determineUserRole(discordId: string): Promise<'admin' | 'player'>
     }
 
     const member = await response.json()
-    const adminRoleIds = process.env.DISCORD_ADMIN_ROLE_IDS?.split(',') || []
+    const adminRoleIds = DISCORD_ADMIN_ROLE_IDS?.split(',') || []
     
     // Sadece development'ta log
     if (process.env.NODE_ENV === 'development') {
