@@ -301,7 +301,10 @@ export async function updateTable(
   updateData: { name: string; password: string | null; items: any[] }
 ): Promise<boolean> {
   try {
-    console.log('DB: updateTable called with:', { tableId, userId })
+    // Sadece development'ta log
+    if (process.env.NODE_ENV === 'development') {
+      console.log('DB: updateTable called with:', { tableId, userId })
+    }
     
     // Tablo sahibi kontrolü
     const { data: existingTable, error: checkError } = await supabase
@@ -311,15 +314,21 @@ export async function updateTable(
       .eq('creator_id', userId)
       .single()
 
-    console.log('DB: Existing table check:', { existingTable, checkError })
+    if (process.env.NODE_ENV === 'development') {
+      console.log('DB: Existing table check:', { existingTable, checkError })
+    }
 
     if (checkError || !existingTable) {
       console.error('DB: Table not found or unauthorized')
-      console.error('DB: Looking for tableId:', tableId, 'userId:', userId)
+      if (process.env.NODE_ENV === 'development') {
+        console.error('DB: Looking for tableId:', tableId, 'userId:', userId)
+      }
       return false
     }
 
-    console.log('DB: Table found, proceeding with update')
+    if (process.env.NODE_ENV === 'development') {
+      console.log('DB: Table found, proceeding with update')
+    }
 
     // Tablo bilgilerini güncelle
     const { error: tableUpdateError } = await supabase
@@ -335,7 +344,9 @@ export async function updateTable(
       throw tableUpdateError
     }
 
-    console.log('DB: Table updated successfully')
+    if (process.env.NODE_ENV === 'development') {
+      console.log('DB: Table updated successfully')
+    }
 
     // Mevcut item'ları sil
     const { error: deleteItemsError } = await supabase
@@ -348,7 +359,9 @@ export async function updateTable(
       throw deleteItemsError
     }
 
-    console.log('DB: Existing items deleted')
+    if (process.env.NODE_ENV === 'development') {
+      console.log('DB: Existing items deleted')
+    }
 
     // City price'ları sil
     const { error: deleteCityPricesError } = await supabase
@@ -361,7 +374,9 @@ export async function updateTable(
       throw deleteCityPricesError
     }
 
-    console.log('DB: Existing city prices deleted')
+    if (process.env.NODE_ENV === 'development') {
+      console.log('DB: Existing city prices deleted')
+    }
 
     // Yeni item'ları ekle
     for (const item of updateData.items) {
@@ -405,7 +420,9 @@ export async function updateTable(
       }
     }
 
-    console.log('DB: Update completed successfully')
+    if (process.env.NODE_ENV === 'development') {
+      console.log('DB: Update completed successfully')
+    }
     return true
   } catch (error) {
     console.error('DB: Error in updateTable:', error)

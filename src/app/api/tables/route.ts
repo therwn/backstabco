@@ -29,12 +29,15 @@ export async function POST(request: NextRequest) {
 
     const { name, password, items } = await request.json()
 
-    console.log('POST: Creating table with data:', {
-      name,
-      password: password ? '***' : null,
-      itemsCount: items?.length || 0,
-      userId: session.user.discordId
-    })
+    // Sadece development'ta log
+    if (process.env.NODE_ENV === 'development') {
+      console.log('POST: Creating table with data:', {
+        name,
+        password: password ? '***' : null,
+        itemsCount: items?.length || 0,
+        userId: session.user.discordId
+      })
+    }
 
     const tableId = await createBlackMarketTable(
       name,
@@ -43,7 +46,9 @@ export async function POST(request: NextRequest) {
       session.user.discordId
     )
 
-    console.log('POST: Table created successfully:', tableId)
+    if (process.env.NODE_ENV === 'development') {
+      console.log('POST: Table created successfully:', tableId)
+    }
 
     return NextResponse.json({ 
       success: true, 

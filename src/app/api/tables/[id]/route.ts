@@ -10,6 +10,7 @@ export async function GET(
   try {
     const session = await getServerSession(authOptions)
     
+    // Tablo görüntüleme için authentication gerekli
     if (!session?.user?.discordId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
@@ -33,28 +34,31 @@ export async function PUT(
 ) {
   try {
     const session = await getServerSession(authOptions)
-    console.log('PUT: Session:', session?.user)
     
-    // Geçici olarak session kontrolünü kaldırıyoruz
-    // if (!session?.user?.discordId) {
-    //   return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    // }
+    // Authentication kontrolü - düzenleme için gerekli
+    if (!session?.user?.discordId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
 
     const body = await request.json()
-    console.log('PUT: Request body:', body)
     const { name, password, items } = body
 
-    // Geçici olarak sabit bir discordId kullanıyoruz
-    const discordId = session?.user?.discordId || '1177269662447317074'
-    console.log('PUT: Using discordId:', discordId)
+    // Sadece development'ta log
+    if (process.env.NODE_ENV === 'development') {
+      console.log('PUT: Session:', session?.user)
+      console.log('PUT: Request body:', body)
+      console.log('PUT: Using discordId:', session.user.discordId)
+    }
 
-    const success = await updateTable(params.id, discordId, {
+    const success = await updateTable(params.id, session.user.discordId, {
       name,
       password: password || null,
       items
     })
 
-    console.log('PUT: Update result:', success)
+    if (process.env.NODE_ENV === 'development') {
+      console.log('PUT: Update result:', success)
+    }
 
     if (success) {
       return NextResponse.json({ success: true })
@@ -74,6 +78,7 @@ export async function DELETE(
   try {
     const session = await getServerSession(authOptions)
     
+    // Authentication kontrolü - silme için gerekli
     if (!session?.user?.discordId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }

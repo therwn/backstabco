@@ -2,17 +2,24 @@ import { NextAuthOptions } from 'next-auth'
 import DiscordProvider from 'next-auth/providers/discord'
 import { User } from '@/types/albion'
 
-// Environment variables kontrolü
-const DISCORD_CLIENT_ID = process.env.DISCORD_CLIENT_ID || '1401636182202388501'
-const DISCORD_CLIENT_SECRET = process.env.DISCORD_CLIENT_SECRET || 'rBH_DdF38X1fvMCuTq0EfgwMeVZjY-LG'
-const DISCORD_GUILD_ID = process.env.DISCORD_GUILD_ID || '1366161562238451853'
+// Environment variables kontrolü - hardcoded değerler kaldırıldı
+const DISCORD_CLIENT_ID = process.env.DISCORD_CLIENT_ID
+const DISCORD_CLIENT_SECRET = process.env.DISCORD_CLIENT_SECRET
+const DISCORD_GUILD_ID = process.env.DISCORD_GUILD_ID
 const NEXTAUTH_URL = process.env.NEXTAUTH_URL || 'http://localhost:3000'
 
-// Debug için environment variables'ları kontrol edelim
-console.log('DISCORD_CLIENT_ID:', DISCORD_CLIENT_ID ? 'SET' : 'NOT SET')
-console.log('DISCORD_CLIENT_SECRET:', DISCORD_CLIENT_SECRET ? 'SET' : 'NOT SET')
-console.log('DISCORD_GUILD_ID:', DISCORD_GUILD_ID ? 'SET' : 'NOT SET')
-console.log('NEXTAUTH_URL:', NEXTAUTH_URL)
+// Environment variables kontrolü
+if (!DISCORD_CLIENT_ID || !DISCORD_CLIENT_SECRET || !DISCORD_GUILD_ID) {
+  throw new Error('Missing required Discord environment variables')
+}
+
+// Debug için environment variables'ları kontrol edelim (sadece development'ta)
+if (process.env.NODE_ENV === 'development') {
+  console.log('DISCORD_CLIENT_ID:', DISCORD_CLIENT_ID ? 'SET' : 'NOT SET')
+  console.log('DISCORD_CLIENT_SECRET:', DISCORD_CLIENT_SECRET ? 'SET' : 'NOT SET')
+  console.log('DISCORD_GUILD_ID:', DISCORD_GUILD_ID ? 'SET' : 'NOT SET')
+  console.log('NEXTAUTH_URL:', NEXTAUTH_URL)
+}
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -60,7 +67,7 @@ export const authOptions: NextAuthOptions = {
   session: {
     strategy: 'jwt'
   },
-  debug: true // Debug modunu açalım
+  debug: process.env.NODE_ENV === 'development' // Sadece development'ta debug
 }
 
 async function checkUserInGuild(discordId: string): Promise<boolean> {
@@ -81,8 +88,11 @@ async function checkUserInGuild(discordId: string): Promise<boolean> {
     const guilds = await response.json()
     const isInTargetGuild = guilds.some((guild: any) => guild.id === DISCORD_GUILD_ID)
     
-    console.log('User guilds:', guilds.map((g: any) => g.name))
-    console.log('Is in target guild:', isInTargetGuild)
+    // Sadece development'ta log
+    if (process.env.NODE_ENV === 'development') {
+      console.log('User guilds:', guilds.map((g: any) => g.name))
+      console.log('Is in target guild:', isInTargetGuild)
+    }
     
     return isInTargetGuild
   } catch (error) {
@@ -110,8 +120,11 @@ async function determineUserRole(discordId: string): Promise<'admin' | 'player'>
     const member = await response.json()
     const adminRoleIds = process.env.DISCORD_ADMIN_ROLE_IDS?.split(',') || []
     
-    console.log('User roles:', member.roles)
-    console.log('Admin role IDs:', adminRoleIds)
+    // Sadece development'ta log
+    if (process.env.NODE_ENV === 'development') {
+      console.log('User roles:', member.roles)
+      console.log('Admin role IDs:', adminRoleIds)
+    }
     
     // Admin rolü kontrolü
     const hasAdminRole = member.roles.some((roleId: string) => adminRoleIds.includes(roleId))

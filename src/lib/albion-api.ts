@@ -128,8 +128,8 @@ async function parseItemsFile(): Promise<AlbionItem[]> {
         
         processedCount++
         
-        // Her 1000 satırda bir log
-        if (processedCount % 1000 === 0) {
+        // Her 1000 satırda bir log (sadece development'ta)
+        if (processedCount % 1000 === 0 && process.env.NODE_ENV === 'development') {
           console.log(`Processed ${processedCount} lines...`)
         }
       }
@@ -137,11 +137,13 @@ async function parseItemsFile(): Promise<AlbionItem[]> {
     
     localItemsCache = items
     
-    // Debug: Tier dağılımını göster
-    console.log('Tier distribution:', tierCounts)
-    console.log(`Loaded ${items.length} items from dataset`)
-    console.log(`Processed ${processedCount} total lines`)
-    console.log(`Skipped ${skippedQualityItems} quality items`)
+    // Debug: Tier dağılımını göster (sadece development'ta)
+    if (process.env.NODE_ENV === 'development') {
+      console.log('Tier distribution:', tierCounts)
+      console.log(`Loaded ${items.length} items from dataset`)
+      console.log(`Processed ${processedCount} total lines`)
+      console.log(`Skipped ${skippedQualityItems} quality items`)
+    }
     
     return items
   } catch (error) {
@@ -445,8 +447,11 @@ export async function searchItems(query: string): Promise<AlbionItem[]> {
     const items = await fetchItems()
     const searchTerm = query.toLowerCase()
     
-    console.log(`Searching for: "${query}"`)
-    console.log(`Total items available: ${items.length}`)
+    // Sadece development'ta log
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`Searching for: "${query}"`)
+      console.log(`Total items available: ${items.length}`)
+    }
     
     // Önce exact match'leri bul
     const exactMatches = items.filter(item => 
@@ -466,24 +471,29 @@ export async function searchItems(query: string): Promise<AlbionItem[]> {
     // Exact match'leri önce, sonra contains match'leri ekle
     const results = [...exactMatches, ...containsMatches]
     
-    console.log(`Found ${results.length} results (${exactMatches.length} exact, ${containsMatches.length} contains)`)
+    // Sadece development'ta log
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`Found ${results.length} results (${exactMatches.length} exact, ${containsMatches.length} contains)`)
+    }
     
-    // İlk 20 sonucu göster ve tier dağılımını logla
+    // İlk 20 sonucu göster ve tier dağılımını logla (sadece development'ta)
     const topResults = results.slice(0, 20)
-    const tierDistribution = topResults.reduce((acc, item) => {
-      acc[item.tier] = (acc[item.tier] || 0) + 1
-      return acc
-    }, {} as Record<number, number>)
-    
-    console.log('Top 20 results tier distribution:', tierDistribution)
-    
-    // Tier dağılımını da göster
-    const allTierDistribution = results.reduce((acc, item) => {
-      acc[item.tier] = (acc[item.tier] || 0) + 1
-      return acc
-    }, {} as Record<number, number>)
-    
-    console.log('All results tier distribution:', allTierDistribution)
+    if (process.env.NODE_ENV === 'development') {
+      const tierDistribution = topResults.reduce((acc, item) => {
+        acc[item.tier] = (acc[item.tier] || 0) + 1
+        return acc
+      }, {} as Record<number, number>)
+      
+      console.log('Top 20 results tier distribution:', tierDistribution)
+      
+      // Tier dağılımını da göster
+      const allTierDistribution = results.reduce((acc, item) => {
+        acc[item.tier] = (acc[item.tier] || 0) + 1
+        return acc
+      }, {} as Record<number, number>)
+      
+      console.log('All results tier distribution:', allTierDistribution)
+    }
     
     return topResults
   } catch (error) {
@@ -577,11 +587,14 @@ export async function listAllTiers(): Promise<void> {
       tierCounts[item.tier] = (tierCounts[item.tier] || 0) + 1
     })
     
-    console.log('=== ALL TIERS AVAILABLE ===')
-    Object.keys(tierCounts).sort((a, b) => parseInt(a) - parseInt(b)).forEach(tier => {
-      console.log(`Tier ${tier}: ${tierCounts[parseInt(tier)]} items`)
-    })
-    console.log('==========================')
+    // Sadece development'ta log
+    if (process.env.NODE_ENV === 'development') {
+      console.log('=== ALL TIERS AVAILABLE ===')
+      Object.keys(tierCounts).sort((a, b) => parseInt(a) - parseInt(b)).forEach(tier => {
+        console.log(`Tier ${tier}: ${tierCounts[parseInt(tier)]} items`)
+      })
+      console.log('==========================')
+    }
   } catch (error) {
     console.error('Error listing tiers:', error)
   }
@@ -593,14 +606,17 @@ export async function listTierItems(tier: number): Promise<AlbionItem[]> {
     const items = await fetchItems()
     const tierItems = items.filter(item => item.tier === tier)
     
-    console.log(`=== TIER ${tier} ITEMS (${tierItems.length}) ===`)
-    tierItems.slice(0, 10).forEach(item => {
-      console.log(`${item.id}: ${item.name} (${item.category})`)
-    })
-    if (tierItems.length > 10) {
-      console.log(`... and ${tierItems.length - 10} more`)
+    // Sadece development'ta log
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`=== TIER ${tier} ITEMS (${tierItems.length}) ===`)
+      tierItems.slice(0, 10).forEach(item => {
+        console.log(`${item.id}: ${item.name} (${item.category})`)
+      })
+      if (tierItems.length > 10) {
+        console.log(`... and ${tierItems.length - 10} more`)
+      }
+      console.log('==========================')
     }
-    console.log('==========================')
     
     return tierItems
   } catch (error) {
