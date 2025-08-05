@@ -341,9 +341,28 @@ export default function TableViewPage() {
     if (!editData) return
     setEditData({
       ...editData,
-      items: editData.items.map(item => 
-        item.id === itemId ? { ...item, [field]: value } : item
-      )
+      items: editData.items.map(item => {
+        if (item.id === itemId) {
+          const updatedItem = { ...item, [field]: value }
+          
+          // Tier veya enchant değiştiğinde ID'yi güncelle
+          if (field === 'itemTier' || field === 'itemEnchantment') {
+            // Base item ID'sini al (tier ve enchant olmadan)
+            const baseId = item.id.replace(/@\d+/, '').replace(/T\d+/, 'T' + updatedItem.itemTier)
+            
+            // Yeni ID'yi oluştur
+            let newId = baseId
+            if (updatedItem.itemEnchantment > 0) {
+              newId = `${newId}@${updatedItem.itemEnchantment}`
+            }
+            
+            updatedItem.id = newId
+          }
+          
+          return updatedItem
+        }
+        return item
+      })
     })
   }
 
