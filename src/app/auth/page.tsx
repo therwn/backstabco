@@ -3,7 +3,7 @@
 import { motion } from 'framer-motion'
 import { signIn, useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { Users } from 'lucide-react'
 import Logo from '@/assets/logo.svg'
 import Image from 'next/image'
@@ -11,12 +11,14 @@ import Image from 'next/image'
 export default function AuthPage() {
   const { data: session, status } = useSession()
   const router = useRouter()
+  const [isRedirecting, setIsRedirecting] = useState(false)
 
   useEffect(() => {
     // Debug logging (sadece development'ta)
     if (process.env.NODE_ENV === 'development') {
       console.log('Auth Page - Status:', status)
       console.log('Auth Page - Session:', session)
+      console.log('Auth Page - Is Redirecting:', isRedirecting)
     }
 
     // Session yükleniyor mu kontrol et
@@ -25,13 +27,18 @@ export default function AuthPage() {
     }
 
     // Session varsa dashboard'a yönlendir
-    if (status === 'authenticated' && session) {
+    if (status === 'authenticated' && session && !isRedirecting) {
       if (process.env.NODE_ENV === 'development') {
         console.log('Auth Page - Redirecting to dashboard')
       }
-      router.push('/dashboard')
+      setIsRedirecting(true)
+      
+      // Kısa bir gecikme ile yönlendirme
+      setTimeout(() => {
+        router.push('/dashboard')
+      }, 1000)
     }
-  }, [session, status, router])
+  }, [session, status, router, isRedirecting])
 
   // Session yükleniyor
   if (status === 'loading') {
@@ -57,6 +64,7 @@ export default function AuthPage() {
             className="w-16 h-16 border-4 border-yellow-500 border-t-transparent rounded-full mx-auto mb-4"
           />
           <p className="text-white text-lg">Dashboard'a yönlendiriliyor...</p>
+          <p className="text-gray-400 text-sm mt-2">Hoş geldin, {session.user?.name}!</p>
         </div>
       </div>
     )

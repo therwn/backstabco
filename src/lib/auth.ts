@@ -40,13 +40,19 @@ export const authOptions: NextAuthOptions = {
         if (discordId) {
           token.discordId = discordId
           
-          // Guild kontrolü yap
-          const isInGuild = await checkUserInGuild(discordId)
-          if (!isInGuild) {
-            throw new Error('NOT_IN_GUILD')
-          }
+          // Geçici olarak guild kontrolünü devre dışı bırak
+          // const isInGuild = await checkUserInGuild(discordId)
+          // if (!isInGuild) {
+          //   throw new Error('NOT_IN_GUILD')
+          // }
           
-          token.role = await determineUserRole(discordId)
+          // Basit role ataması
+          token.role = 'player'
+          
+          if (process.env.NODE_ENV === 'development') {
+            console.log('JWT Callback - Discord ID:', discordId)
+            console.log('JWT Callback - Role:', token.role)
+          }
         }
       }
       return token
@@ -56,6 +62,12 @@ export const authOptions: NextAuthOptions = {
         session.user.id = token.sub!
         session.user.discordId = token.discordId as string
         session.user.role = token.role as 'admin' | 'player'
+        
+        if (process.env.NODE_ENV === 'development') {
+          console.log('Session Callback - User ID:', session.user.id)
+          console.log('Session Callback - Discord ID:', session.user.discordId)
+          console.log('Session Callback - Role:', session.user.role)
+        }
       }
       return session
     }
@@ -70,6 +82,7 @@ export const authOptions: NextAuthOptions = {
   debug: process.env.NODE_ENV === 'development' // Sadece development'ta debug
 }
 
+// Guild kontrolü fonksiyonu geçici olarak devre dışı
 async function checkUserInGuild(discordId: string): Promise<boolean> {
   try {
     // Discord API'den kullanıcının guild'lerini al
