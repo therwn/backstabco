@@ -1,19 +1,28 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useParams, useRouter } from 'next/navigation'
-import { ArrowLeft, Eye, Trash2, Edit, Save, X, Lock, Search } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
-import { motion, AnimatePresence } from 'framer-motion'
+import { useRouter, useParams } from 'next/navigation'
 import { useSession } from 'next-auth/react'
-import Logo from '@/assets/logo.svg'
-import Image from 'next/image'
-import { getItemImageUrl, searchItems, AlbionItem } from '@/lib/albion-api'
-import { formatCurrency, formatCurrencyInput, parseCurrencyInput } from '@/lib/utils'
+import { motion, AnimatePresence } from 'framer-motion'
+import { Search, Plus, X, Edit2, Save, ChevronDown, ChevronUp, Trash2, Lock, MapPin, DollarSign, Package, ArrowLeft, Edit } from 'lucide-react'
+import { AlbionItem, searchItems, getItemImageUrl } from '@/lib/albion-api'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Switch } from '@/components/ui/switch'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { CheckCircle2Icon, AlertCircleIcon, InfoIcon } from 'lucide-react'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import Image from 'next/image'
+import Logo from '@/assets/logo.svg'
+import { formatCurrency, formatCurrencyInput, parseCurrencyInput } from '@/lib/utils'
 
 interface TableItem {
   id: string
@@ -417,159 +426,131 @@ export default function TableViewPage() {
         )}
       </AnimatePresence>
 
-      {/* Password Modal */}
-      <AnimatePresence>
-        {showPasswordModal && (
-          <>
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[9998]"
-              onClick={() => {
-                setShowPasswordModal(false)
-                router.push('/dashboard')
-              }}
+      {/* Password Dialog */}
+      <Dialog open={showPasswordModal} onOpenChange={(open) => {
+        if (!open) {
+          setShowPasswordModal(false)
+          router.push('/dashboard')
+        }
+      }}>
+        <DialogContent className="bg-black-800 border border-gray-600">
+          <DialogHeader>
+            <div className="text-center mb-6">
+              <Lock className="w-12 h-12 text-[#F3B22D] mx-auto mb-4" />
+              <DialogTitle className="text-xl font-bold text-white mb-2">Şifre Gerekli</DialogTitle>
+              <DialogDescription className="text-gray-400">
+                Bu tablo şifre korumalıdır.
+              </DialogDescription>
+            </div>
+          </DialogHeader>
+          <div className="space-y-4">
+            <Input
+              type="password"
+              placeholder="Tablo şifresini girin..."
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              onKeyPress={(e) => e.key === 'Enter' && checkPassword()}
+              className="w-full"
+              autoFocus
             />
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="fixed inset-0 flex items-center justify-center z-[9999]"
-            >
-              <div className="w-full max-w-md mx-4 bg-black-800 border border-gray-600 rounded-lg shadow-2xl p-6">
-                <div className="text-center mb-6">
-                  <Lock className="w-12 h-12 text-[#F3B22D] mx-auto mb-4" />
-                  <h2 className="text-xl font-bold text-white mb-2">Şifre Gerekli</h2>
-                  <p className="text-gray-400">Bu tablo şifre korumalıdır.</p>
-                </div>
-                <div className="space-y-4">
-                  <Input
-                    type="password"
-                    placeholder="Tablo şifresini girin..."
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    onKeyPress={(e) => e.key === 'Enter' && checkPassword()}
-                    className="w-full"
-                    autoFocus
-                  />
-                  <div className="flex space-x-3">
-                    <Button
-                      className="flex-1"
-                      onClick={checkPassword}
-                    >
-                      Giriş Yap
-                    </Button>
-                    <Button
-                      variant="outline"
-                      className="flex-1 text-white border-white hover:bg-white hover:text-black-900"
-                      onClick={() => {
-                        setShowPasswordModal(false)
-                        router.push('/dashboard')
-                      }}
-                    >
-                      İptal
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
+            <div className="flex space-x-3">
+              <Button
+                className="flex-1"
+                onClick={checkPassword}
+              >
+                Giriş Yap
+              </Button>
+              <Button
+                variant="outline"
+                className="flex-1 text-white border-white hover:bg-white hover:text-black-900"
+                onClick={() => {
+                  setShowPasswordModal(false)
+                  router.push('/dashboard')
+                }}
+              >
+                İptal
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
-      {/* Add Item Modal */}
-      <AnimatePresence>
-        {showAddItemModal && (
-          <>
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[9998]"
-              onClick={() => setShowAddItemModal(false)}
-            />
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="fixed inset-0 flex items-center justify-center z-[9999]"
-            >
-              <div className="w-full max-w-4xl mx-4 bg-black-800 border border-gray-600 rounded-lg shadow-2xl p-6">
-                <div className="text-center mb-6">
-                  <h2 className="text-xl font-bold text-white mb-2">Item Ekle</h2>
-                  <p className="text-gray-400">Lütfen item'ın adını veya ID'sini girin.</p>
-                </div>
-                <div className="space-y-4">
-                  <div className="flex items-center space-x-2">
-                    <Search className="w-5 h-5 text-gray-400" />
-                    <Input
-                      type="text"
-                      placeholder="Item adı veya ID..."
-                      value={searchQuery}
-                      onChange={(e) => {
-                        setSearchQuery(e.target.value)
-                        if (e.target.value.trim()) {
-                          handleSearch()
-                        }
-                      }}
-                      onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-                      className="flex-1"
-                      autoFocus
-                    />
-                    {isSearching && (
-                      <div className="w-5 h-5 border-2 border-[#F3B22D] border-t-transparent rounded-full animate-spin"></div>
-                    )}
-                  </div>
-                  
-                  {/* Search Results */}
-                  {searchResults.length > 0 && (
-                    <div className="max-h-96 overflow-y-auto space-y-2">
-                      {searchResults.map((item) => (
-                        <motion.div
-                          key={item.id}
-                          initial={{ opacity: 0, y: 10 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          className="flex items-center space-x-3 p-3 border border-gray-600 rounded-lg hover:border-[#F3B22D] cursor-pointer transition-colors"
-                          onClick={() => handleItemSelect(item)}
-                        >
-                          <div className="w-12 h-12 rounded flex items-center justify-center bg-gray-700">
-                            <Image
-                              src={getItemImageUrl(item.id)}
-                              alt={item.name}
-                              width={48}
-                              height={48}
-                              className="w-10 h-10 object-contain"
-                              onError={(e) => {
-                                const target = e.target as HTMLImageElement
-                                target.src = '/placeholder-item.png'
-                              }}
-                            />
-                          </div>
-                          <div className="flex-1">
-                            <div className="text-white font-medium">{item.name}</div>
-                            <div className="text-gray-400 text-sm">T{item.tier} • {item.category}</div>
-                          </div>
-                        </motion.div>
-                      ))}
+      {/* Add Item Dialog */}
+      <Dialog open={showAddItemModal} onOpenChange={setShowAddItemModal}>
+        <DialogContent className="bg-black-800 border border-gray-600 max-w-4xl">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold text-white mb-2">Item Ekle</DialogTitle>
+            <DialogDescription className="text-gray-400">
+              Lütfen item'ın adını veya ID'sini girin.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="flex items-center space-x-2">
+              <Search className="w-5 h-5 text-gray-400" />
+              <Input
+                type="text"
+                placeholder="Item adı veya ID..."
+                value={searchQuery}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value)
+                  if (e.target.value.trim()) {
+                    handleSearch()
+                  }
+                }}
+                onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+                className="flex-1"
+                autoFocus
+              />
+              {isSearching && (
+                <div className="w-5 h-5 border-2 border-[#F3B22D] border-t-transparent rounded-full animate-spin"></div>
+              )}
+            </div>
+            
+            {/* Search Results */}
+            {searchResults.length > 0 && (
+              <div className="max-h-96 overflow-y-auto space-y-2">
+                {searchResults.map((item) => (
+                  <motion.div
+                    key={item.id}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="flex items-center space-x-3 p-3 border border-gray-600 rounded-lg hover:border-[#F3B22D] cursor-pointer transition-colors"
+                    onClick={() => handleItemSelect(item)}
+                  >
+                    <div className="w-12 h-12 rounded flex items-center justify-center bg-gray-700">
+                      <Image
+                        src={getItemImageUrl(item.id)}
+                        alt={item.name}
+                        width={48}
+                        height={48}
+                        className="w-10 h-10 object-contain"
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement
+                          target.src = '/placeholder-item.png'
+                        }}
+                      />
                     </div>
-                  )}
-                  
-                  <div className="flex space-x-3">
-                    <Button
-                      variant="outline"
-                      className="flex-1 text-white border-white hover:bg-white hover:text-black-900"
-                      onClick={() => setShowAddItemModal(false)}
-                    >
-                      İptal
-                    </Button>
-                  </div>
-                </div>
+                    <div className="flex-1">
+                      <div className="text-white font-medium">{item.name}</div>
+                      <div className="text-gray-400 text-sm">T{item.tier} • {item.category}</div>
+                    </div>
+                  </motion.div>
+                ))}
               </div>
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
+            )}
+            
+            <div className="flex space-x-3">
+              <Button
+                variant="outline"
+                className="flex-1 text-white border-white hover:bg-white hover:text-black-900"
+                onClick={() => setShowAddItemModal(false)}
+              >
+                İptal
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Animated Background Lines */}
       <div className="absolute inset-0 pointer-events-none">
