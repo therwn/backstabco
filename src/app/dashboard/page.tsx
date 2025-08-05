@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
-import { Plus, Eye, Trash2, LogOut, User, Calendar, Package } from 'lucide-react'
+import { Plus, Eye, Trash2, LogOut, User, Calendar, Package, Sword } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -287,6 +287,14 @@ export default function DashboardPage() {
                   >
                     <Plus className="w-4 h-4 mr-2" />
                     Yeni Tablo Oluştur
+                  </Button>
+                  
+                  <Button 
+                    className="btn-primary"
+                    onClick={() => router.push('/builds')}
+                  >
+                    <Sword className="w-4 h-4 mr-2" />
+                    Builds
                   </Button>
                 </div>
               </CardContent>
