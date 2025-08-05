@@ -35,51 +35,7 @@ const getSpellIcon = (slot: string) => {
   }
 }
 
-// Mock spell data - will be replaced with actual data from spells.json
-const mockSpells: AlbionSpell[] = [
-  {
-    id: 'fireball',
-    name: 'Fireball',
-    category: 'weapon',
-    slot: 'q',
-    description: 'Launches a fireball at the target'
-  },
-  {
-    id: 'frostbolt',
-    name: 'Frostbolt',
-    category: 'weapon',
-    slot: 'q',
-    description: 'Launches a bolt of ice at the target'
-  },
-  {
-    id: 'lightning',
-    name: 'Lightning',
-    category: 'weapon',
-    slot: 'w',
-    description: 'Casts lightning at the target'
-  },
-  {
-    id: 'heal',
-    name: 'Heal',
-    category: 'head',
-    slot: 'd',
-    description: 'Heals the target'
-  },
-  {
-    id: 'shield',
-    name: 'Shield',
-    category: 'armor',
-    slot: 'r',
-    description: 'Creates a protective shield'
-  },
-  {
-    id: 'speed',
-    name: 'Speed',
-    category: 'shoes',
-    slot: 'f',
-    description: 'Increases movement speed'
-  }
-]
+
 
 export function SpellSearchModal({ 
   isOpen, 
@@ -106,14 +62,21 @@ export function SpellSearchModal({
       if (query.trim().length >= 2) {
         setIsLoading(true)
         try {
-          // Filter mock spells based on query and slot
-          const filteredSpells = mockSpells.filter(spell => {
-            const matchesQuery = spell.name.toLowerCase().includes(query.toLowerCase()) ||
-                               spell.description.toLowerCase().includes(query.toLowerCase())
-            const matchesSlot = !slot || spell.slot.toLowerCase() === slot.toLowerCase()
-            return matchesQuery && matchesSlot
+          // Fetch spells from API
+          const params = new URLSearchParams({
+            q: query,
+            ...(slot && { slot }),
+            ...(slot && { category: getCategoryFromSlot(slot) })
           })
-          setSpells(filteredSpells.slice(0, 10))
+          
+          const response = await fetch(`/api/spells?${params}`)
+          if (response.ok) {
+            const data = await response.json()
+            setSpells(data)
+          } else {
+            console.error('Failed to fetch spells')
+            setSpells([])
+          }
           setSelectedIndex(-1)
         } catch (error) {
           console.error('Search error:', error)
@@ -128,6 +91,25 @@ export function SpellSearchModal({
 
     return () => clearTimeout(timeoutId)
   }, [query, slot])
+
+  // Helper function to get category from slot
+  const getCategoryFromSlot = (slot: string) => {
+    switch (slot.toLowerCase()) {
+      case 'q':
+      case 'w':
+      case 'e':
+      case 'passive':
+        return 'weapon'
+      case 'd':
+        return 'head'
+      case 'r':
+        return 'armor'
+      case 'f':
+        return 'shoes'
+      default:
+        return ''
+    }
+  }
 
   // Keyboard navigation
   useEffect(() => {
