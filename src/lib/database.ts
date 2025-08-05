@@ -13,6 +13,9 @@ const supabase = createClient(supabaseUrl, supabaseServiceKey, {
   auth: {
     autoRefreshToken: false,
     persistSession: false
+  },
+  db: {
+    schema: 'public'
   }
 })
 
@@ -28,8 +31,7 @@ export async function createBlackMarketTable(
   name: string,
   password: string | null,
   items: any[],
-  userId: string,
-  creatorName?: string
+  userId: string
 ): Promise<any> {
   try {
     // Create table
@@ -39,7 +41,6 @@ export async function createBlackMarketTable(
         name,
         password,
         creator_id: userId,
-        creator_name: creatorName || 'Unknown User',
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       })
