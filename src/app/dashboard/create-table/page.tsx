@@ -3,12 +3,14 @@
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Search, ShoppingCart, Plus, Trash2, Edit, Save, X, Calendar, User, MapPin, DollarSign, Package, Eye, EyeOff, HelpCircle, ChevronDown, ChevronUp } from 'lucide-react'
+import { Search, ShoppingCart, Plus, Trash2, Edit, Save, X, Calendar, User, MapPin, DollarSign, Package, Eye, EyeOff, HelpCircle, ChevronDown, ChevronUp, Lock, Globe } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Switch } from '@/components/ui/switch'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
+import { CheckCircle2Icon, AlertCircleIcon, InfoIcon } from 'lucide-react'
 import { AlbionItem, searchItems, getAvailableTiersForItem, getAvailableEnchantmentsForItem, getItemImageUrl } from '@/lib/albion-api'
 import { AlbionCity, ALBION_CITIES } from '@/types/albion'
 import { formatCurrencyInput, parseCurrencyInput } from '@/lib/utils'
@@ -34,30 +36,46 @@ interface SelectedItem {
   isCollapsed: boolean
 }
 
-// Custom Alert Component
+// Shadcn Alert Component
 const CustomAlert = ({ message, type, onClose }: { message: string; type: 'success' | 'error' | 'info'; onClose: () => void }) => {
+  const getIcon = () => {
+    switch (type) {
+      case 'success':
+        return <CheckCircle2Icon className="h-4 w-4" />
+      case 'error':
+        return <AlertCircleIcon className="h-4 w-4" />
+      case 'info':
+        return <InfoIcon className="h-4 w-4" />
+      default:
+        return <InfoIcon className="h-4 w-4" />
+    }
+  }
+
   return (
     <motion.div
       initial={{ opacity: 0, y: -50 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -50 }}
-      className={`fixed top-4 right-4 z-[99999] p-4 rounded-lg shadow-lg max-w-sm ${
-        type === 'success' ? 'bg-green-600 text-white' :
-        type === 'error' ? 'bg-red-600 text-white' :
-        'bg-blue-600 text-white'
-      }`}
+      className="fixed top-4 right-4 z-[99999] max-w-sm"
     >
-      <div className="flex items-center justify-between">
-        <span>{message}</span>
+      <Alert variant={type === 'error' ? 'destructive' : 'default'}>
+        {getIcon()}
+        <AlertTitle>
+          {type === 'success' ? 'Başarılı!' : 
+           type === 'error' ? 'Hata!' : 'Bilgi'}
+        </AlertTitle>
+        <AlertDescription>
+          {message}
+        </AlertDescription>
         <Button
           size="sm"
           variant="ghost"
           onClick={onClose}
-          className="text-white hover:bg-white/20 ml-2"
+          className="absolute top-2 right-2 h-6 w-6 p-0"
         >
-          <X className="w-4 h-4" />
+          <X className="h-4 w-4" />
         </Button>
-      </div>
+      </Alert>
     </motion.div>
   )
 }

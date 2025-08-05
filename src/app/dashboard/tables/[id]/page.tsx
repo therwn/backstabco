@@ -12,6 +12,8 @@ import Logo from '@/assets/logo.svg'
 import Image from 'next/image'
 import { getItemImageUrl, searchItems, AlbionItem } from '@/lib/albion-api'
 import { formatCurrency, formatCurrencyInput, parseCurrencyInput } from '@/lib/utils'
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
+import { CheckCircle2Icon, AlertCircleIcon, InfoIcon } from 'lucide-react'
 
 interface TableItem {
   id: string
@@ -38,36 +40,46 @@ interface Table {
   items: TableItem[]
 }
 
-// Custom Alert Component
+// Shadcn Alert Component
 const CustomAlert = ({ message, type, onClose }: { message: string; type: 'success' | 'error' | 'info'; onClose: () => void }) => {
+  const getIcon = () => {
+    switch (type) {
+      case 'success':
+        return <CheckCircle2Icon className="h-4 w-4" />
+      case 'error':
+        return <AlertCircleIcon className="h-4 w-4" />
+      case 'info':
+        return <InfoIcon className="h-4 w-4" />
+      default:
+        return <InfoIcon className="h-4 w-4" />
+    }
+  }
+
   return (
     <motion.div
-      initial={{ opacity: 0, scale: 0.95 }}
-      animate={{ opacity: 1, scale: 1 }}
-      exit={{ opacity: 0, scale: 0.95 }}
-      className={`fixed inset-0 flex items-center justify-center z-[99999] bg-black/50 backdrop-blur-sm`}
-      onClick={onClose}
+      initial={{ opacity: 0, y: -50 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -50 }}
+      className="fixed top-4 right-4 z-[99999] max-w-sm"
     >
-      <div className={`max-w-md mx-4 p-6 rounded-lg shadow-2xl ${
-        type === 'success' ? 'bg-green-600 text-white' :
-        type === 'error' ? 'bg-red-600 text-white' :
-        'bg-blue-600 text-white'
-      }`}>
-        <div className="text-center">
-          <div className="text-lg font-semibold mb-2">
-            {type === 'success' ? '✅ Başarılı' :
-             type === 'error' ? '❌ Hata' :
-             'ℹ️ Bilgi'}
-          </div>
-          <p className="mb-4">{message}</p>
-          <Button
-            onClick={onClose}
-            className="bg-white/20 hover:bg-white/30 text-white"
-          >
-            Tamam
-          </Button>
-        </div>
-      </div>
+      <Alert variant={type === 'error' ? 'destructive' : 'default'}>
+        {getIcon()}
+        <AlertTitle>
+          {type === 'success' ? 'Başarılı!' : 
+           type === 'error' ? 'Hata!' : 'Bilgi'}
+        </AlertTitle>
+        <AlertDescription>
+          {message}
+        </AlertDescription>
+        <Button
+          size="sm"
+          variant="ghost"
+          onClick={onClose}
+          className="absolute top-2 right-2 h-6 w-6 p-0"
+        >
+          <X className="h-4 w-4" />
+        </Button>
+      </Alert>
     </motion.div>
   )
 }
