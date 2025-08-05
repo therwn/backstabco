@@ -558,7 +558,8 @@ export default function CreateTablePage() {
                                           className="w-14 h-14"
                                           onError={(e) => {
                                             const target = e.target as HTMLImageElement
-                                            target.style.display = 'none'
+                                            target.src = '/placeholder-item.png'
+                                            target.style.display = 'block'
                                           }}
                                         />
                                       </div>
@@ -624,7 +625,8 @@ export default function CreateTablePage() {
                               className="w-18 h-18"
                               onError={(e) => {
                                 const target = e.target as HTMLImageElement
-                                target.style.display = 'none'
+                                target.src = '/placeholder-item.png'
+                                target.style.display = 'block'
                               }}
                             />
                           </div>

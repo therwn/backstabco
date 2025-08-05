@@ -552,7 +552,15 @@ export function getItemImageUrl(itemId: string, quality: number = 1, enchantment
   // Quality suffix'ini ekle
   const qualitySuffix = quality > 1 ? `_q${quality}` : ''
   
-  return `https://render.albiononline.com/v1/item/${formattedItemId}${enchantmentSuffix}${qualitySuffix}`
+  // Fallback URL ekle
+  const imageUrl = `https://render.albiononline.com/v1/item/${formattedItemId}${enchantmentSuffix}${qualitySuffix}`
+  
+  // Debug için URL'i logla (sadece development'ta)
+  if (process.env.NODE_ENV === 'development') {
+    console.log('Generated image URL:', imageUrl)
+  }
+  
+  return imageUrl
 }
 
 // Fiyat formatla

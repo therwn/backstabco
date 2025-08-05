@@ -570,13 +570,14 @@ export default function TableViewPage() {
                       <div className="w-16 h-16 rounded flex items-center justify-center">
                         <Image
                           src={getItemImageUrl(item.id, 1, item.itemEnchantment)}
-                          alt={item.itemName}
+                          alt={item.name}
                           width={64}
                           height={64}
                           className="w-14 h-14"
                           onError={(e) => {
                             const target = e.target as HTMLImageElement
-                            target.style.display = 'none'
+                            target.src = '/placeholder-item.png'
+                            target.style.display = 'block'
                           }}
                         />
                       </div>
