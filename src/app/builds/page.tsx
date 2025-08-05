@@ -18,8 +18,8 @@ export default function BuildsPage() {
   const [builds, setBuilds] = useState<Build[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
-  const [contentTypeFilter, setContentTypeFilter] = useState('')
-  const [weaponTypeFilter, setWeaponTypeFilter] = useState('')
+  const [contentTypeFilter, setContentTypeFilter] = useState('all')
+  const [weaponTypeFilter, setWeaponTypeFilter] = useState('all')
 
   // Session kontrolü
   useEffect(() => {
@@ -59,8 +59,8 @@ export default function BuildsPage() {
                          build.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          build.weaponType.toLowerCase().includes(searchTerm.toLowerCase())
     
-    const matchesContentType = !contentTypeFilter || build.contentType === contentTypeFilter
-    const matchesWeaponType = !weaponTypeFilter || build.weaponType === weaponTypeFilter
+    const matchesContentType = contentTypeFilter === 'all' || build.contentType === contentTypeFilter
+    const matchesWeaponType = weaponTypeFilter === 'all' || build.weaponType === weaponTypeFilter
 
     return matchesSearch && matchesContentType && matchesWeaponType
   })
@@ -141,32 +141,32 @@ export default function BuildsPage() {
             <SelectTrigger className="bg-gray-800 border-gray-700 text-white">
               <SelectValue placeholder="Content Type" />
             </SelectTrigger>
-            <SelectContent className="bg-gray-800 border-gray-700">
-              <SelectItem value="">All Content Types</SelectItem>
-              {CONTENT_TYPES.map(type => (
-                <SelectItem key={type} value={type}>{type}</SelectItem>
-              ))}
-            </SelectContent>
+                         <SelectContent className="bg-gray-800 border-gray-700">
+               <SelectItem value="all">All Content Types</SelectItem>
+               {CONTENT_TYPES.map(type => (
+                 <SelectItem key={type} value={type}>{type}</SelectItem>
+               ))}
+             </SelectContent>
           </Select>
           
           <Select value={weaponTypeFilter} onValueChange={setWeaponTypeFilter}>
             <SelectTrigger className="bg-gray-800 border-gray-700 text-white">
               <SelectValue placeholder="Weapon Type" />
             </SelectTrigger>
-            <SelectContent className="bg-gray-800 border-gray-700">
-              <SelectItem value="">All Weapons</SelectItem>
-              {WEAPON_TYPES.map(type => (
-                <SelectItem key={type} value={type}>{type}</SelectItem>
-              ))}
-            </SelectContent>
+                         <SelectContent className="bg-gray-800 border-gray-700">
+               <SelectItem value="all">All Weapons</SelectItem>
+               {WEAPON_TYPES.map(type => (
+                 <SelectItem key={type} value={type}>{type}</SelectItem>
+               ))}
+             </SelectContent>
           </Select>
           
-          <Button
-            onClick={() => {
-              setSearchTerm('')
-              setContentTypeFilter('')
-              setWeaponTypeFilter('')
-            }}
+                       <Button
+               onClick={() => {
+                 setSearchTerm('')
+                 setContentTypeFilter('all')
+                 setWeaponTypeFilter('all')
+               }}
             variant="outline"
             className="border-gray-600 text-gray-300 hover:bg-gray-700"
           >
@@ -184,12 +184,12 @@ export default function BuildsPage() {
           </div>
         ) : filteredBuilds.length === 0 ? (
           <div className="text-center py-12">
-            <div className="text-gray-400 text-lg mb-4">
-              {searchTerm || contentTypeFilter || weaponTypeFilter 
-                ? 'No builds match your filters' 
-                : 'No builds found'
-              }
-            </div>
+                         <div className="text-gray-400 text-lg mb-4">
+               {searchTerm || contentTypeFilter !== 'all' || weaponTypeFilter !== 'all'
+                 ? 'No builds match your filters' 
+                 : 'No builds found'
+               }
+             </div>
             <Button
               onClick={() => router.push('/builds/create')}
               className="bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white border-0"
