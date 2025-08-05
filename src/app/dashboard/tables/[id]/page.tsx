@@ -113,10 +113,24 @@ export default function TableViewPage() {
 
   const fetchTableDetails = async (tableId: string) => {
     try {
+      // Debug için log'lar ekle
+      if (process.env.NODE_ENV === 'development') {
+        console.log('Table View: fetchTableDetails called with tableId:', tableId)
+      }
+
       const response = await fetch(`/api/tables/${tableId}`)
+      
+      if (process.env.NODE_ENV === 'development') {
+        console.log('Table View: API response status:', response.status)
+      }
       
       if (response.ok) {
         const data = await response.json()
+        
+        if (process.env.NODE_ENV === 'development') {
+          console.log('Table View: Table data received:', data)
+        }
+        
         setTable(data)
         setEditData(data)
         
@@ -126,6 +140,11 @@ export default function TableViewPage() {
         }
       } else {
         const errorData = await response.json()
+        
+        if (process.env.NODE_ENV === 'development') {
+          console.log('Table View: API error response:', errorData)
+        }
+        
         showAlert('Tablo bulunamadı!', 'error')
         router.push('/dashboard')
       }

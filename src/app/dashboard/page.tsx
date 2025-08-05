@@ -48,12 +48,33 @@ export default function DashboardPage() {
 
   const fetchTables = async () => {
     try {
+      // Debug için log'lar ekle
+      if (process.env.NODE_ENV === 'development') {
+        console.log('Dashboard: fetchTables called')
+      }
+
       const response = await fetch('/api/tables')
+      
+      if (process.env.NODE_ENV === 'development') {
+        console.log('Dashboard: API response status:', response.status)
+      }
+
       if (response.ok) {
         const data = await response.json()
+        
+        if (process.env.NODE_ENV === 'development') {
+          console.log('Dashboard: Tables data received:', data)
+          console.log('Dashboard: Number of tables:', data.length)
+          if (data.length > 0) {
+            console.log('Dashboard: First table:', data[0])
+          }
+        }
+        
         setTables(data)
       } else {
         console.error('Failed to fetch tables')
+        const errorText = await response.text()
+        console.error('Dashboard: API error response:', errorText)
       }
     } catch (error) {
       console.error('Error fetching tables:', error)

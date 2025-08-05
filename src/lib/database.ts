@@ -102,6 +102,11 @@ export async function createBlackMarketTable(
 // Tüm tabloları getir (herkese açık)
 export async function getAllTables(): Promise<BlackMarketTable[]> {
   try {
+    // Debug için log'lar ekle
+    if (process.env.NODE_ENV === 'development') {
+      console.log('DB: getAllTables called')
+    }
+
     const { data, error } = await supabase
       .from('black_market_tables')
       .select(`
@@ -122,6 +127,15 @@ export async function getAllTables(): Promise<BlackMarketTable[]> {
         )
       `)
       .order('created_at', { ascending: false })
+
+    if (process.env.NODE_ENV === 'development') {
+      console.log('DB: getAllTables query result:', { data, error })
+      console.log('DB: Number of tables found:', data?.length || 0)
+      if (data && data.length > 0) {
+        console.log('DB: First table ID:', data[0].id)
+        console.log('DB: First table name:', data[0].name)
+      }
+    }
 
     if (error) {
       console.error('Error fetching all tables:', error)
