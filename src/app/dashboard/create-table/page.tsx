@@ -549,13 +549,13 @@ export default function CreateTablePage() {
                                       whileHover={{ backgroundColor: '#374151' }}
                                       onClick={() => handleItemSelect(item)}
                                     >
-                                      <div className="w-16 h-16 rounded flex items-center justify-center">
+                                      <div className="w-16 h-16 rounded flex items-center justify-center bg-gray-700">
                                         <Image
                                           src={getItemImageUrl(item.id)}
                                           alt={item.name}
                                           width={64}
                                           height={64}
-                                          className="w-14 h-14"
+                                          className="w-14 h-14 object-contain"
                                           onError={(e) => {
                                             const target = e.target as HTMLImageElement
                                             target.src = '/placeholder-item.png'
@@ -616,13 +616,13 @@ export default function CreateTablePage() {
                       {/* Item Header - Always Visible */}
                       <div className="flex items-center justify-between p-6">
                         <div className="flex items-center space-x-4">
-                          <div className="w-20 h-20 rounded flex items-center justify-center">
+                          <div className="w-20 h-20 rounded flex items-center justify-center bg-gray-700">
                             <Image
                               src={getItemImageUrl(selectedItem.item.id, 1, selectedItem.selectedEnchantment)}
                               alt={selectedItem.item.name}
                               width={80}
                               height={80}
-                              className="w-18 h-18"
+                              className="w-18 h-18 object-contain"
                               onError={(e) => {
                                 const target = e.target as HTMLImageElement
                                 target.src = '/placeholder-item.png'

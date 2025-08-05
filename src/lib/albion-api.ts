@@ -552,7 +552,7 @@ export function getItemImageUrl(itemId: string, quality: number = 1, enchantment
   // Quality suffix'ini ekle
   const qualitySuffix = quality > 1 ? `_q${quality}` : ''
   
-  // Fallback URL ekle
+  // Farklı URL formatlarını dene
   const imageUrl = `https://render.albiononline.com/v1/item/${formattedItemId}${enchantmentSuffix}${qualitySuffix}`
   
   // Debug için URL'i logla (sadece development'ta)

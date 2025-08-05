@@ -10,7 +10,6 @@ import { useSession, signOut } from 'next-auth/react'
 import Logo from '@/assets/logo.svg'
 import Image from 'next/image'
 import Link from 'next/link'
-import MusicPlayer from '@/components/MusicPlayer'
 import { AnimatePresence } from 'framer-motion'
 
 interface Table {
@@ -162,38 +161,20 @@ export default function DashboardPage() {
           </div>
           
           {/* Profile & Logout */}
-          <div className="relative">
-            <Button
-              variant="outline"
-              className="text-white border-white hover:bg-white hover:text-black-900"
-              onMouseEnter={() => setShowLogout(true)}
-              onMouseLeave={() => setTimeout(() => setShowLogout(false), 500)}
-            >
-              <User className="w-4 h-4 mr-2" />
-              {session?.user?.name || 'Kullanıcı'}
-            </Button>
+          <div className="flex items-center space-x-3">
+            <div className="flex items-center space-x-2">
+              <User className="w-4 h-4 text-white" />
+              <span className="text-white font-medium">{session?.user?.name || 'Kullanıcı'}</span>
+            </div>
             
-            <AnimatePresence>
-              {showLogout && (
-                <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: 10 }}
-                  className="absolute right-0 top-full mt-2 bg-black-800 border border-gray-600 rounded-lg shadow-lg z-[99999] pointer-events-auto"
-                  onMouseEnter={() => setShowLogout(true)}
-                  onMouseLeave={() => setTimeout(() => setShowLogout(false), 500)}
-                >
-                  <Button
-                    variant="ghost"
-                    className="w-full text-red-400 hover:bg-red-400 hover:text-white whitespace-nowrap min-w-[140px]"
-                    onClick={handleSignOut}
-                  >
-                    <LogOut className="w-4 h-4 mr-2 flex-shrink-0" />
-                    Çıkış Yap
-                  </Button>
-                </motion.div>
-              )}
-            </AnimatePresence>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-red-400 hover:bg-red-400 hover:text-white p-2"
+              onClick={handleSignOut}
+            >
+              <LogOut className="w-4 h-4" />
+            </Button>
           </div>
         </motion.div>
       </div>
@@ -334,7 +315,7 @@ export default function DashboardPage() {
       </div>
       
       {/* Music Player */}
-      <MusicPlayer />
+      {/* Music Player */}
     </div>
   )
 } 

@@ -10,7 +10,6 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useSession } from 'next-auth/react'
 import Logo from '@/assets/logo.svg'
 import Image from 'next/image'
-import MusicPlayer from '@/components/MusicPlayer'
 import { getItemImageUrl } from '@/lib/albion-api'
 import { formatCurrency, formatCurrencyInput, parseCurrencyInput } from '@/lib/utils'
 
@@ -567,13 +566,13 @@ export default function TableViewPage() {
                     className="border border-gray-600 rounded-lg p-4"
                   >
                     <div className="flex items-center space-x-4 mb-4">
-                      <div className="w-16 h-16 rounded flex items-center justify-center">
+                      <div className="w-16 h-16 rounded flex items-center justify-center bg-gray-700">
                         <Image
                           src={getItemImageUrl(item.id, 1, item.itemEnchantment)}
-                          alt={item.name}
+                          alt={item.itemName}
                           width={64}
                           height={64}
-                          className="w-14 h-14"
+                          className="w-14 h-14 object-contain"
                           onError={(e) => {
                             const target = e.target as HTMLImageElement
                             target.src = '/placeholder-item.png'
@@ -758,7 +757,7 @@ export default function TableViewPage() {
       </div>
       
       {/* Music Player */}
-      <MusicPlayer />
+      {/* MusicPlayer component was removed from imports, so it's removed from here */}
     </div>
   )
 } 
