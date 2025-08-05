@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
-import { BUILD_CATEGORIES, EQUIPMENT_SLOTS, SPELL_SLOTS, CONSUMABLE_TYPES, AlbionItem, AlbionSpell } from '@/types/albion'
+import { BUILD_CATEGORIES, EQUIPMENT_SLOTS, SPELL_SLOTS, CONSUMABLE_TYPES, AlbionSpell } from '@/types/albion'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -12,6 +12,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Skeleton } from '@/components/ui/skeleton'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { ArrowLeft, Plus, Trash2, Save, Zap, Sword, Shield, Heart, Flame, Snowflake, Eye, Edit, X, Tag, Package, Droplets, Apple } from 'lucide-react'
+import { SearchModal } from '@/components/ui/search-modal'
+import { SpellSearchModal } from '@/components/ui/spell-search-modal'
+import { AlbionItem } from '@/lib/albion-api'
 
 // Equipment slot icons
 const getEquipmentIcon = (slot: string) => {
@@ -70,6 +73,11 @@ export default function CreateBuildPage() {
     armor: {},
     shoes: {}
   })
+  const [isLoading, setIsLoading] = useState(false)
+  const [showItemModal, setShowItemModal] = useState(false)
+  const [showSpellModal, setShowSpellModal] = useState(false)
+  const [currentSelection, setCurrentSelection] = useState<{ type: 'equipment' | 'consumables', slot: string } | null>(null)
+  const [currentSpellSelection, setCurrentSpellSelection] = useState<{ category: string, slot: string } | null>(null)
 
   // Session kontrolü
   useEffect(() => {
@@ -116,6 +124,70 @@ export default function CreateBuildPage() {
 
   const removeTag = (tagToRemove: string) => {
     setTags(prev => prev.filter(tag => tag !== tagToRemove))
+  }
+
+  const handleItemSelect = (item: AlbionItem) => {
+    if (currentSelection) {
+      if (currentSelection.type === 'equipment') {
+        setEquipment(prev => ({
+          ...prev,
+          [currentSelection.slot]: item
+        }))
+      } else if (currentSelection.type === 'consumables') {
+        setConsumables(prev => ({
+          ...prev,
+          [currentSelection.slot]: item
+        }))
+      }
+    }
+    setCurrentSelection(null)
+  }
+
+  const openItemModal = (type: 'equipment' | 'consumables', slot: string) => {
+    setCurrentSelection({ type, slot })
+    setShowItemModal(true)
+  }
+
+  const removeItem = (type: 'equipment' | 'consumables', slot: string) => {
+    if (type === 'equipment') {
+      setEquipment(prev => ({
+        ...prev,
+        [slot]: undefined
+      }))
+    } else if (type === 'consumables') {
+      setConsumables(prev => ({
+        ...prev,
+        [slot]: undefined
+      }))
+    }
+  }
+
+  const handleSpellSelect = (spell: any) => {
+    if (currentSpellSelection) {
+      setSpells(prev => ({
+        ...prev,
+        [currentSpellSelection.category]: {
+          ...prev[currentSpellSelection.category],
+          [currentSpellSelection.slot]: spell
+        }
+      }))
+    }
+    setCurrentSpellSelection(null)
+  }
+
+  const openSpellModal = (category: string, slot: string) => {
+    setCurrentSpellSelection({ category, slot })
+    setShowSpellModal(true)
+  }
+
+  const removeSpell = (category: string, slot: string) => {
+    setSpells(prev => ({
+      ...prev,
+      [category]: {
+        ...prev[category],
+        [slot]: undefined
+      }
+    }))
   }
 
   // Build oluştur
@@ -353,10 +425,7 @@ export default function CreateBuildPage() {
                       size="sm"
                       variant="outline"
                       className="border-gray-600 text-gray-300 hover:bg-gray-700"
-                      onClick={() => {
-                        // TODO: Implement item search modal
-                        console.log('Select item for:', key)
-                      }}
+                      onClick={() => openItemModal('equipment', key)}
                     >
                       {equipment[key] ? equipment[key]?.name : 'Select Item'}
                     </Button>
@@ -382,10 +451,7 @@ export default function CreateBuildPage() {
                       size="sm"
                       variant="outline"
                       className="border-gray-600 text-gray-300 hover:bg-gray-700"
-                      onClick={() => {
-                        // TODO: Implement item search modal
-                        console.log('Select consumable for:', key)
-                      }}
+                      onClick={() => openItemModal('consumables', key)}
                     >
                       {consumables[key] ? consumables[key]?.name : 'Select Item'}
                     </Button>
@@ -411,17 +477,26 @@ export default function CreateBuildPage() {
                     <div key={slot} className="flex items-center space-x-3">
                       {getSpellIcon(slot)}
                       <span className="text-gray-300 text-sm flex-1">{label}</span>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="border-gray-600 text-gray-300 hover:bg-gray-700"
-                        onClick={() => {
-                          // TODO: Implement spell search modal
-                          console.log('Select spell for:', category, slot)
-                        }}
-                      >
-                        {spells[category]?.[slot] ? spells[category][slot]?.name : 'Select Spell'}
-                      </Button>
+                      <div className="flex space-x-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="border-gray-600 text-gray-300 hover:bg-gray-700"
+                          onClick={() => openSpellModal(category, slot)}
+                        >
+                          {spells[category]?.[slot] ? spells[category][slot]?.name : 'Select Spell'}
+                        </Button>
+                        {spells[category]?.[slot] && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="border-red-600 text-red-300 hover:bg-red-700"
+                            onClick={() => removeSpell(category, slot)}
+                          >
+                            <X className="w-4 h-4" />
+                          </Button>
+                        )}
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -430,6 +505,29 @@ export default function CreateBuildPage() {
           </Card>
         </div>
       </div>
+
+      {/* Item Search Modal */}
+      <SearchModal
+        isOpen={showItemModal}
+        onClose={() => {
+          setShowItemModal(false)
+          setCurrentSelection(null)
+        }}
+        onItemSelect={handleItemSelect}
+        placeholder="Item ara..."
+      />
+
+      {/* Spell Search Modal */}
+      <SpellSearchModal
+        isOpen={showSpellModal}
+        onClose={() => {
+          setShowSpellModal(false)
+          setCurrentSpellSelection(null)
+        }}
+        onSpellSelect={handleSpellSelect}
+        placeholder="Spell ara..."
+        slot={currentSpellSelection?.slot}
+      />
     </div>
   )
 } 
