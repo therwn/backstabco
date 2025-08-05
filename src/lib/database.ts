@@ -206,6 +206,8 @@ export async function getTableDetails(tableId: string): Promise<BlackMarketTable
     // Debug için log'lar ekle
     if (process.env.NODE_ENV === 'development') {
       console.log('DB: getTableDetails called with tableId:', tableId)
+      console.log('DB: tableId type:', typeof tableId)
+      console.log('DB: tableId value:', tableId)
     }
     
     // Ana tablo bilgilerini al
@@ -216,23 +218,44 @@ export async function getTableDetails(tableId: string): Promise<BlackMarketTable
       .single()
 
     if (process.env.NODE_ENV === 'development') {
-      console.log('DB: Table query result:', { tableData, tableError })
+      console.log('DB: Table query result:', { 
+        tableData: tableData ? 'Found' : 'Not found',
+        tableError: tableError ? tableError.message : 'No error',
+        tableId: tableId
+      })
     }
 
     if (tableError) {
       console.error('DB: Table query error:', tableError)
+      if (process.env.NODE_ENV === 'development') {
+        console.log('DB: Error details:', {
+          code: tableError.code,
+          message: tableError.message,
+          details: tableError.details
+        })
+      }
       return null
     }
 
     if (!tableData) {
       if (process.env.NODE_ENV === 'development') {
         console.log('DB: No table data found for ID:', tableId)
+        // Tüm tabloları kontrol et
+        const { data: allTables } = await supabase
+          .from('black_market_tables')
+          .select('id, name')
+          .limit(5)
+        console.log('DB: Available tables:', allTables)
       }
       return null
     }
 
     if (process.env.NODE_ENV === 'development') {
-      console.log('DB: Table found:', tableData)
+      console.log('DB: Table found:', {
+        id: tableData.id,
+        name: tableData.name,
+        creator_id: tableData.creator_id
+      })
     }
 
     // Item'ları al
@@ -240,6 +263,13 @@ export async function getTableDetails(tableId: string): Promise<BlackMarketTable
       .from('black_market_items')
       .select('*')
       .eq('table_id', tableId)
+
+    if (process.env.NODE_ENV === 'development') {
+      console.log('DB: Items query result:', {
+        itemsCount: itemsData?.length || 0,
+        itemsError: itemsError ? itemsError.message : 'No error'
+      })
+    }
 
     if (itemsError) {
       console.error('DB: Items query error:', itemsError)
@@ -318,6 +348,14 @@ export async function getTableDetails(tableId: string): Promise<BlackMarketTable
       creator: tableData.creator_id,
       createdAt: tableData.created_at,
       items: itemsWithCityPrices
+    }
+
+    if (process.env.NODE_ENV === 'development') {
+      console.log('DB: Final result:', {
+        id: result.id,
+        name: result.name,
+        itemsCount: result.items.length
+      })
     }
 
     return result

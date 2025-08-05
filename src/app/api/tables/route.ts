@@ -5,13 +5,20 @@ import { getAllTables, createBlackMarketTable } from '@/lib/database'
 
 export async function GET() {
   try {
-    // Tablo listesi herkese açık olmalı
-    // const session = await getServerSession(authOptions)
-    // if (!session?.user?.discordId) {
-    //   return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    // }
+    // Debug için log'lar ekle
+    if (process.env.NODE_ENV === 'development') {
+      console.log('API: GET /api/tables called')
+    }
 
     const tables = await getAllTables()
+    
+    if (process.env.NODE_ENV === 'development') {
+      console.log('API: getAllTables result:', {
+        count: tables.length,
+        tables: tables.map(t => ({ id: t.id, name: t.name, creator: t.creator }))
+      })
+    }
+
     return NextResponse.json(tables)
   } catch (error) {
     console.error('GET tables error:', error)

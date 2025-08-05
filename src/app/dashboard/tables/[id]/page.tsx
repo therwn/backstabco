@@ -69,26 +69,29 @@ const CustomAlert = ({ message, type, onClose }: { message: string; type: 'succe
       initial={{ opacity: 0, y: -50 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -50 }}
-      className="fixed top-4 right-4 z-[99999] max-w-sm"
+      className="fixed inset-0 flex items-center justify-center z-[99999] bg-black/50 backdrop-blur-sm"
+      onClick={onClose}
     >
-      <Alert variant={type === 'error' ? 'destructive' : 'default'}>
-        {getIcon()}
-        <AlertTitle>
-          {type === 'success' ? 'Başarılı!' : 
-           type === 'error' ? 'Hata!' : 'Bilgi'}
-        </AlertTitle>
-        <AlertDescription>
-          {message}
-        </AlertDescription>
-        <Button
-          size="sm"
-          variant="ghost"
-          onClick={onClose}
-          className="absolute top-2 right-2 h-6 w-6 p-0"
-        >
-          <X className="h-4 w-4" />
-        </Button>
-      </Alert>
+      <div className="max-w-sm mx-4">
+        <Alert variant={type === 'error' ? 'destructive' : 'default'}>
+          {getIcon()}
+          <AlertTitle>
+            {type === 'success' ? 'Başarılı!' : 
+             type === 'error' ? 'Hata!' : 'Bilgi'}
+          </AlertTitle>
+          <AlertDescription>
+            {message}
+          </AlertDescription>
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={onClose}
+            className="absolute top-2 right-2 h-6 w-6 p-0"
+          >
+            <X className="h-4 w-4" />
+          </Button>
+        </Alert>
+      </div>
     </motion.div>
   )
 }
