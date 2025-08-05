@@ -1,5 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
-import { BlackMarketTable, Build, BuildSkill, CreateBuildData, UpdateBuildData } from '@/types/albion'
+import { BlackMarketTable, Build, CreateBuildData, UpdateBuildData } from '@/types/albion'
 
 // Supabase client'ı oluştur
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
@@ -59,160 +59,120 @@ async function getDiscordUsername(discordId: string): Promise<string> {
   }
 }
 
-// Build sistemi fonksiyonları
-export async function createBuild(buildData: CreateBuildData, userId: string): Promise<Build | null> {
+// Build functions - Updated for new structure
+export async function createBuild(buildData: CreateBuildData, creatorId: string): Promise<Build | null> {
   try {
-    // Discord kullanıcı adını al
-    const creatorName = await getDiscordUsername(userId)
+    console.log('Creating build with data:', buildData)
     
-    // Build'i oluştur
-    const { data: build, error: buildError } = await supabase
+    const creatorName = await getDiscordUsername(creatorId)
+    if (!creatorName) {
+      console.error('Failed to get creator name for ID:', creatorId)
+      return null
+    }
+
+    const { data, error } = await supabase
       .from('builds')
       .insert({
-        name: buildData.name,
-        description: buildData.description || null,
-        content_type: buildData.contentType,
-        weapon_type: buildData.weaponType,
-        creator_id: userId,
-        creator_name: creatorName,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
+        title: buildData.title,
+        category: buildData.category,
+        tags: buildData.tags || [],
+        description: buildData.description,
+        equipment: buildData.equipment || {},
+        consumables: buildData.consumables || {},
+        spells: buildData.spells || {},
+        creator_id: creatorId,
+        creator_name: creatorName
       })
       .select()
       .single()
 
-    if (buildError) {
-      console.error('Error creating build:', buildError)
-      throw buildError
+    if (error) {
+      console.error('Error creating build:', error)
+      return null
     }
 
-    // Skill'leri ekle
-    for (const skill of buildData.skills) {
-      const { error: skillError } = await supabase
-        .from('build_skills')
-        .insert({
-          build_id: build.id,
-          skill_type: skill.skillType,
-          skill_name: skill.skillName,
-          description: skill.description || null
-        })
-
-      if (skillError) {
-        console.error('Error inserting skill:', skillError)
-        throw skillError
-      }
+    return {
+      id: data.id.toString(),
+      title: data.title,
+      category: data.category,
+      tags: data.tags || [],
+      description: data.description,
+      equipment: data.equipment || {},
+      consumables: data.consumables || {},
+      spells: data.spells || {},
+      creator: data.creator_id,
+      creatorName: data.creator_name,
+      createdAt: new Date(data.created_at),
+      updatedAt: new Date(data.updated_at)
     }
-
-    // Oluşturulan build'i döndür
-    return await getBuildById(build.id.toString())
   } catch (error) {
     console.error('Error in createBuild:', error)
-    throw error
+    return null
   }
 }
 
 export async function getAllBuilds(): Promise<Build[]> {
   try {
+    console.log('Fetching all builds')
+    
     const { data, error } = await supabase
       .from('builds')
-      .select(`
-        id,
-        name,
-        description,
-        content_type,
-        weapon_type,
-        creator_id,
-        creator_name,
-        created_at,
-        updated_at,
-        build_skills (
-          id,
-          skill_type,
-          skill_name,
-          description,
-          created_at
-        )
-      `)
+      .select('*')
       .order('created_at', { ascending: false })
 
     if (error) {
-      console.error('Error fetching all builds:', error)
-      throw error
+      console.error('Error fetching builds:', error)
+      return []
     }
 
     return data.map(build => ({
       id: build.id.toString(),
-      name: build.name,
+      title: build.title,
+      category: build.category,
+      tags: build.tags || [],
       description: build.description,
-      contentType: build.content_type,
-      weaponType: build.weapon_type,
+      equipment: build.equipment || {},
+      consumables: build.consumables || {},
+      spells: build.spells || {},
       creator: build.creator_id,
       creatorName: build.creator_name,
       createdAt: new Date(build.created_at),
-      updatedAt: new Date(build.updated_at),
-      skills: (build.build_skills || []).map(skill => ({
-        id: skill.id.toString(),
-        buildId: build.id.toString(),
-        skillType: skill.skill_type as BuildSkill['skillType'],
-        skillName: skill.skill_name,
-        description: skill.description,
-        createdAt: new Date(skill.created_at)
-      }))
+      updatedAt: new Date(build.updated_at)
     }))
   } catch (error) {
     console.error('Error in getAllBuilds:', error)
-    throw error
+    return []
   }
 }
 
 export async function getBuildById(buildId: string): Promise<Build | null> {
   try {
+    console.log('Fetching build by ID:', buildId)
+    
     const { data, error } = await supabase
       .from('builds')
-      .select(`
-        id,
-        name,
-        description,
-        content_type,
-        weapon_type,
-        creator_id,
-        creator_name,
-        created_at,
-        updated_at,
-        build_skills (
-          id,
-          skill_type,
-          skill_name,
-          description,
-          created_at
-        )
-      `)
-      .eq('id', buildId)
+      .select('*')
+      .eq('id', parseInt(buildId))
       .single()
 
-    if (error) {
+    if (error || !data) {
       console.error('Error fetching build:', error)
       return null
     }
 
     return {
       id: data.id.toString(),
-      name: data.name,
+      title: data.title,
+      category: data.category,
+      tags: data.tags || [],
       description: data.description,
-      contentType: data.content_type,
-      weaponType: data.weapon_type,
+      equipment: data.equipment || {},
+      consumables: data.consumables || {},
+      spells: data.spells || {},
       creator: data.creator_id,
       creatorName: data.creator_name,
       createdAt: new Date(data.created_at),
-      updatedAt: new Date(data.updated_at),
-      skills: (data.build_skills || []).map(skill => ({
-        id: skill.id.toString(),
-        buildId: data.id.toString(),
-        skillType: skill.skill_type as BuildSkill['skillType'],
-        skillName: skill.skill_name,
-        description: skill.description,
-        createdAt: new Date(skill.created_at)
-      }))
+      updatedAt: new Date(data.updated_at)
     }
   } catch (error) {
     console.error('Error in getBuildById:', error)
@@ -220,70 +180,27 @@ export async function getBuildById(buildId: string): Promise<Build | null> {
   }
 }
 
-export async function updateBuild(buildId: string, buildData: UpdateBuildData, userId: string): Promise<boolean> {
+export async function updateBuild(buildId: string, updateData: UpdateBuildData, creatorId: string): Promise<boolean> {
   try {
-    // Build'in sahibi olduğunu kontrol et
-    const { data: existingBuild, error: checkError } = await supabase
+    console.log('Updating build:', buildId, 'with data:', updateData)
+    
+    const { error } = await supabase
       .from('builds')
-      .select('id, creator_id')
-      .eq('id', buildId)
-      .eq('creator_id', userId)
-      .single()
+      .update({
+        title: updateData.title,
+        category: updateData.category,
+        tags: updateData.tags,
+        description: updateData.description,
+        equipment: updateData.equipment,
+        consumables: updateData.consumables,
+        spells: updateData.spells
+      })
+      .eq('id', parseInt(buildId))
+      .eq('creator_id', creatorId)
 
-    if (checkError || !existingBuild) {
-      console.error('Build not found or unauthorized')
+    if (error) {
+      console.error('Error updating build:', error)
       return false
-    }
-
-    // Build bilgilerini güncelle
-    const updateData: any = {
-      updated_at: new Date().toISOString()
-    }
-
-    if (buildData.name) updateData.name = buildData.name
-    if (buildData.description !== undefined) updateData.description = buildData.description
-    if (buildData.contentType) updateData.content_type = buildData.contentType
-    if (buildData.weaponType) updateData.weapon_type = buildData.weaponType
-
-    const { error: updateError } = await supabase
-      .from('builds')
-      .update(updateData)
-      .eq('id', buildId)
-
-    if (updateError) {
-      console.error('Error updating build:', updateError)
-      throw updateError
-    }
-
-    // Skill'leri güncelle (varsa)
-    if (buildData.skills) {
-      // Mevcut skill'leri sil
-      const { error: deleteSkillsError } = await supabase
-        .from('build_skills')
-        .delete()
-        .eq('build_id', buildId)
-
-      if (deleteSkillsError) {
-        console.error('Error deleting existing skills:', deleteSkillsError)
-        throw deleteSkillsError
-      }
-
-      // Yeni skill'leri ekle
-      for (const skill of buildData.skills) {
-        const { error: skillError } = await supabase
-          .from('build_skills')
-          .insert({
-            build_id: buildId,
-            skill_type: skill.skillType,
-            skill_name: skill.skillName,
-            description: skill.description || null
-          })
-
-        if (skillError) {
-          console.error('Error inserting skill:', skillError)
-          throw skillError
-        }
-      }
     }
 
     return true
@@ -293,30 +210,19 @@ export async function updateBuild(buildId: string, buildData: UpdateBuildData, u
   }
 }
 
-export async function deleteBuild(buildId: string, userId: string): Promise<boolean> {
+export async function deleteBuild(buildId: string, creatorId: string): Promise<boolean> {
   try {
-    // Build'in sahibi olduğunu kontrol et
-    const { data: existingBuild, error: checkError } = await supabase
-      .from('builds')
-      .select('id')
-      .eq('id', buildId)
-      .eq('creator_id', userId)
-      .single()
-
-    if (checkError || !existingBuild) {
-      console.error('Build not found or unauthorized')
-      return false
-    }
-
-    // Build'i sil (skill'ler CASCADE ile silinecek)
-    const { error: deleteError } = await supabase
+    console.log('Deleting build:', buildId)
+    
+    const { error } = await supabase
       .from('builds')
       .delete()
-      .eq('id', buildId)
+      .eq('id', parseInt(buildId))
+      .eq('creator_id', creatorId)
 
-    if (deleteError) {
-      console.error('Error deleting build:', deleteError)
-      throw deleteError
+    if (error) {
+      console.error('Error deleting build:', error)
+      return false
     }
 
     return true

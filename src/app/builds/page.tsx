@@ -3,13 +3,13 @@
 import { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
-import { Build, CONTENT_TYPES, WEAPON_TYPES } from '@/types/albion'
+import { Build, BUILD_CATEGORIES } from '@/types/albion'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Skeleton } from '@/components/ui/skeleton'
-import { Plus, Search, Filter, Eye, Edit, Trash2, Sword, Shield, Zap, Heart, Flame, Snowflake } from 'lucide-react'
+import { Plus, Search, Filter, Eye, Edit, Trash2, Sword, Shield, Zap, Heart, Flame, Snowflake, Tag, Package, Droplets, Apple } from 'lucide-react'
 
 export default function BuildsPage() {
   const { data: session, status } = useSession()
@@ -18,8 +18,7 @@ export default function BuildsPage() {
   const [builds, setBuilds] = useState<Build[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
-  const [contentTypeFilter, setContentTypeFilter] = useState('all')
-  const [weaponTypeFilter, setWeaponTypeFilter] = useState('all')
+  const [categoryFilter, setCategoryFilter] = useState('all')
 
   // Session kontrolü
   useEffect(() => {
@@ -55,31 +54,35 @@ export default function BuildsPage() {
 
   // Filtreleme
   const filteredBuilds = builds.filter(build => {
-    const matchesSearch = build.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    const matchesSearch = build.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          build.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         build.weaponType.toLowerCase().includes(searchTerm.toLowerCase())
+                         build.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()))
     
-    const matchesContentType = contentTypeFilter === 'all' || build.contentType === contentTypeFilter
-    const matchesWeaponType = weaponTypeFilter === 'all' || build.weaponType === weaponTypeFilter
+    const matchesCategory = categoryFilter === 'all' || build.category === categoryFilter
 
-    return matchesSearch && matchesContentType && matchesWeaponType
+    return matchesSearch && matchesCategory
   })
 
-  // Weapon type icon'u
-  const getWeaponIcon = (weaponType: string) => {
-    if (weaponType.includes('Staff')) return <Zap className="w-4 h-4" />
-    if (weaponType.includes('Sword')) return <Sword className="w-4 h-4" />
-    if (weaponType.includes('Shield')) return <Shield className="w-4 h-4" />
-    if (weaponType.includes('Fire')) return <Flame className="w-4 h-4" />
-    if (weaponType.includes('Frost')) return <Snowflake className="w-4 h-4" />
-    return <Sword className="w-4 h-4" />
+  // Equipment icon'u
+  const getEquipmentIcon = (slot: string) => {
+    switch (slot) {
+      case 'weapon': return <Sword className="w-4 h-4" />
+      case 'offhand': return <Shield className="w-4 h-4" />
+      case 'helmet': case 'helmetOption': return <Heart className="w-4 h-4" />
+      case 'chest': case 'chestOption': return <Package className="w-4 h-4" />
+      case 'boots': case 'bootsOption': return <Snowflake className="w-4 h-4" />
+      case 'cape': case 'capeOption': return <Flame className="w-4 h-4" />
+      default: return <Package className="w-4 h-4" />
+    }
   }
 
-  // Content type badge rengi
-  const getContentTypeColor = (contentType: string) => {
-    if (contentType.includes('PvP')) return 'bg-red-500/10 text-red-500 border-red-500/20'
-    if (contentType.includes('PvE')) return 'bg-green-500/10 text-green-500 border-green-500/20'
-    if (contentType.includes('ZvZ')) return 'bg-purple-500/10 text-purple-500 border-purple-500/20'
+  // Category badge rengi
+  const getCategoryColor = (category: string) => {
+    if (category.includes('PvP')) return 'bg-red-500/10 text-red-500 border-red-500/20'
+    if (category.includes('PvE')) return 'bg-green-500/10 text-green-500 border-green-500/20'
+    if (category.includes('ZvZ')) return 'bg-purple-500/10 text-purple-500 border-purple-500/20'
+    if (category.includes('Dungeon')) return 'bg-blue-500/10 text-blue-500 border-blue-500/20'
+    if (category.includes('Arena')) return 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20'
     return 'bg-gray-500/10 text-gray-500 border-gray-500/20'
   }
 
@@ -126,7 +129,7 @@ export default function BuildsPage() {
         </div>
 
         {/* Filters */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
             <Input
@@ -137,36 +140,23 @@ export default function BuildsPage() {
             />
           </div>
           
-          <Select value={contentTypeFilter} onValueChange={setContentTypeFilter}>
+          <Select value={categoryFilter} onValueChange={setCategoryFilter}>
             <SelectTrigger className="bg-gray-800 border-gray-700 text-white">
-              <SelectValue placeholder="Content Type" />
+              <SelectValue placeholder="Category" />
             </SelectTrigger>
-                         <SelectContent className="bg-gray-800 border-gray-700">
-               <SelectItem value="all">All Content Types</SelectItem>
-               {CONTENT_TYPES.map(type => (
-                 <SelectItem key={type} value={type}>{type}</SelectItem>
-               ))}
-             </SelectContent>
+            <SelectContent className="bg-gray-800 border-gray-700">
+              <SelectItem value="all">All Categories</SelectItem>
+              {BUILD_CATEGORIES.map(category => (
+                <SelectItem key={category} value={category}>{category}</SelectItem>
+              ))}
+            </SelectContent>
           </Select>
           
-          <Select value={weaponTypeFilter} onValueChange={setWeaponTypeFilter}>
-            <SelectTrigger className="bg-gray-800 border-gray-700 text-white">
-              <SelectValue placeholder="Weapon Type" />
-            </SelectTrigger>
-                         <SelectContent className="bg-gray-800 border-gray-700">
-               <SelectItem value="all">All Weapons</SelectItem>
-               {WEAPON_TYPES.map(type => (
-                 <SelectItem key={type} value={type}>{type}</SelectItem>
-               ))}
-             </SelectContent>
-          </Select>
-          
-                       <Button
-               onClick={() => {
-                 setSearchTerm('')
-                 setContentTypeFilter('all')
-                 setWeaponTypeFilter('all')
-               }}
+          <Button
+            onClick={() => {
+              setSearchTerm('')
+              setCategoryFilter('all')
+            }}
             variant="outline"
             className="border-gray-600 text-gray-300 hover:bg-gray-700"
           >
@@ -184,12 +174,12 @@ export default function BuildsPage() {
           </div>
         ) : filteredBuilds.length === 0 ? (
           <div className="text-center py-12">
-                         <div className="text-gray-400 text-lg mb-4">
-               {searchTerm || contentTypeFilter !== 'all' || weaponTypeFilter !== 'all'
-                 ? 'No builds match your filters' 
-                 : 'No builds found'
-               }
-             </div>
+            <div className="text-gray-400 text-lg mb-4">
+              {searchTerm || categoryFilter !== 'all'
+                ? 'No builds match your filters' 
+                : 'No builds found'
+              }
+            </div>
             <Button
               onClick={() => router.push('/builds/create')}
               className="bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white border-0"
@@ -205,8 +195,8 @@ export default function BuildsPage() {
                 <CardHeader className="pb-3">
                   <div className="flex items-start justify-between">
                     <div className="flex items-center space-x-2">
-                      {getWeaponIcon(build.weaponType)}
-                      <CardTitle className="text-lg text-white">{build.name}</CardTitle>
+                      <Package className="w-4 h-4" />
+                      <CardTitle className="text-lg text-white">{build.title}</CardTitle>
                     </div>
                     <div className="flex space-x-1">
                       <Button
@@ -250,20 +240,40 @@ export default function BuildsPage() {
                   
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
-                      <span className="text-gray-500 text-sm">Weapon:</span>
-                      <span className="text-white text-sm font-medium">{build.weaponType}</span>
-                    </div>
-                    
-                    <div className="flex items-center justify-between">
-                      <span className="text-gray-500 text-sm">Content:</span>
-                      <span className={`px-2 py-1 rounded-full text-xs border ${getContentTypeColor(build.contentType)}`}>
-                        {build.contentType}
+                      <span className="text-gray-500 text-sm">Category:</span>
+                      <span className={`px-2 py-1 rounded-full text-xs border ${getCategoryColor(build.category)}`}>
+                        {build.category}
                       </span>
                     </div>
                     
+                    {build.tags.length > 0 && (
+                      <div className="flex items-center justify-between">
+                        <span className="text-gray-500 text-sm">Tags:</span>
+                        <div className="flex flex-wrap gap-1">
+                          {build.tags.slice(0, 3).map(tag => (
+                            <span key={tag} className="bg-blue-500/20 text-blue-300 px-2 py-1 rounded-full text-xs">
+                              {tag}
+                            </span>
+                          ))}
+                          {build.tags.length > 3 && (
+                            <span className="text-gray-400 text-xs">+{build.tags.length - 3}</span>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                    
                     <div className="flex items-center justify-between">
-                      <span className="text-gray-500 text-sm">Skills:</span>
-                      <span className="text-white text-sm">{build.skills.length}</span>
+                      <span className="text-gray-500 text-sm">Equipment:</span>
+                      <span className="text-white text-sm">{Object.keys(build.equipment || {}).length}</span>
+                    </div>
+                    
+                    <div className="flex items-center justify-between">
+                      <span className="text-gray-500 text-sm">Spells:</span>
+                      <span className="text-white text-sm">
+                        {Object.values(build.spells || {}).reduce((total, category) => 
+                          total + Object.keys(category || {}).length, 0
+                        )}
+                      </span>
                     </div>
                     
                     <div className="flex items-center justify-between">

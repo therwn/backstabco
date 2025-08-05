@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
-import { CONTENT_TYPES, WEAPON_TYPES, BuildSkill } from '@/types/albion'
+import { BUILD_CATEGORIES, EQUIPMENT_SLOTS, SPELL_SLOTS, CONSUMABLE_TYPES, AlbionItem, AlbionSpell } from '@/types/albion'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -11,48 +11,42 @@ import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { ArrowLeft, Plus, Trash2, Save, Zap, Sword, Shield, Heart, Flame, Snowflake, Eye, Edit, X } from 'lucide-react'
+import { ArrowLeft, Plus, Trash2, Save, Zap, Sword, Shield, Heart, Flame, Snowflake, Eye, Edit, X, Tag, Package, Droplets, Apple } from 'lucide-react'
 
-interface SkillTemplate {
-  type: BuildSkill['skillType']
-  name: string
-  description: string
+// Equipment slot icons
+const getEquipmentIcon = (slot: string) => {
+  switch (slot) {
+    case 'weapon': return <Sword className="w-4 h-4" />
+    case 'offhand': return <Shield className="w-4 h-4" />
+    case 'helmet': case 'helmetOption': return <Heart className="w-4 h-4" />
+    case 'chest': case 'chestOption': return <Package className="w-4 h-4" />
+    case 'boots': case 'bootsOption': return <Snowflake className="w-4 h-4" />
+    case 'cape': case 'capeOption': return <Flame className="w-4 h-4" />
+    default: return <Package className="w-4 h-4" />
+  }
 }
 
-// Skill şablonları - weapon type'a göre
-const SKILL_TEMPLATES: Record<string, SkillTemplate[]> = {
-  'Fire Staff': [
-    { type: 'Q', name: 'Fire Bolt', description: 'Deals fire damage to target' },
-    { type: 'W', name: 'Fire Wall', description: 'Creates a wall of fire' },
-    { type: 'E', name: 'Meteor Shower', description: 'Calls down meteors from the sky' },
-    { type: 'Passive', name: 'Pyromaniac', description: 'Increases fire damage' },
-    { type: 'Consumable', name: 'Fire Potion', description: 'Temporary fire damage boost' },
-    { type: 'Mount', name: 'Fire Horse', description: 'Fast mount with fire resistance' }
-  ],
-  'Frost Staff': [
-    { type: 'Q', name: 'Ice Bolt', description: 'Deals ice damage and slows target' },
-    { type: 'W', name: 'Ice Wall', description: 'Creates a wall of ice' },
-    { type: 'E', name: 'Blizzard', description: 'Creates a blizzard area' },
-    { type: 'Passive', name: 'Frost Master', description: 'Increases ice damage' },
-    { type: 'Consumable', name: 'Ice Potion', description: 'Temporary ice damage boost' },
-    { type: 'Mount', name: 'Ice Horse', description: 'Fast mount with ice resistance' }
-  ],
-  'Sword': [
-    { type: 'Q', name: 'Slash', description: 'Basic sword attack' },
-    { type: 'W', name: 'Parry', description: 'Block incoming attacks' },
-    { type: 'E', name: 'Heroic Strike', description: 'Powerful sword strike' },
-    { type: 'Passive', name: 'Sword Master', description: 'Increases sword damage' },
-    { type: 'Consumable', name: 'Strength Potion', description: 'Temporary strength boost' },
-    { type: 'Mount', name: 'War Horse', description: 'Combat mount with armor' }
-  ],
-  'Bow': [
-    { type: 'Q', name: 'Precise Shot', description: 'Accurate bow shot' },
-    { type: 'W', name: 'Multi Shot', description: 'Fires multiple arrows' },
-    { type: 'E', name: 'Rain of Arrows', description: 'Shoots arrows in an area' },
-    { type: 'Passive', name: 'Archer Master', description: 'Increases bow damage' },
-    { type: 'Consumable', name: 'Agility Potion', description: 'Temporary agility boost' },
-    { type: 'Mount', name: 'Swift Horse', description: 'Fast mount for archers' }
-  ]
+// Consumable type icons
+const getConsumableIcon = (type: string) => {
+  switch (type) {
+    case 'potion': case 'potionOption': return <Droplets className="w-4 h-4" />
+    case 'food': case 'foodOption': return <Apple className="w-4 h-4" />
+    default: return <Droplets className="w-4 h-4" />
+  }
+}
+
+// Spell slot icons
+const getSpellIcon = (slot: string) => {
+  switch (slot) {
+    case 'q': return <Zap className="w-4 h-4" />
+    case 'w': return <Shield className="w-4 h-4" />
+    case 'e': return <Sword className="w-4 h-4" />
+    case 'd': return <Heart className="w-4 h-4" />
+    case 'r': return <Flame className="w-4 h-4" />
+    case 'f': return <Snowflake className="w-4 h-4" />
+    case 'passive': return <Eye className="w-4 h-4" />
+    default: return <Zap className="w-4 h-4" />
+  }
 }
 
 export default function CreateBuildPage() {
@@ -64,11 +58,18 @@ export default function CreateBuildPage() {
   const [success, setSuccess] = useState('')
   
   // Form state
-  const [buildName, setBuildName] = useState('')
-  const [buildDescription, setBuildDescription] = useState('')
-  const [contentType, setContentType] = useState('')
-  const [weaponType, setWeaponType] = useState('')
-  const [skills, setSkills] = useState<Omit<BuildSkill, 'id' | 'buildId' | 'createdAt'>[]>([])
+  const [title, setTitle] = useState('')
+  const [category, setCategory] = useState('')
+  const [tags, setTags] = useState<string[]>([])
+  const [description, setDescription] = useState('')
+  const [equipment, setEquipment] = useState<Record<string, AlbionItem | undefined>>({})
+  const [consumables, setConsumables] = useState<Record<string, AlbionItem | undefined>>({})
+  const [spells, setSpells] = useState<Record<string, Record<string, AlbionSpell | undefined>>>({
+    weapon: {},
+    head: {},
+    armor: {},
+    shoes: {}
+  })
 
   // Session kontrolü
   useEffect(() => {
@@ -79,80 +80,48 @@ export default function CreateBuildPage() {
     }
   }, [status, router])
 
-  // Weapon type değiştiğinde skill şablonlarını yükle
-  useEffect(() => {
-    if (weaponType && SKILL_TEMPLATES[weaponType]) {
-      const weaponSkills = SKILL_TEMPLATES[weaponType]
-      setSkills(weaponSkills.map(skill => ({
-        skillType: skill.type,
-        skillName: skill.name,
-        description: skill.description
-      })))
-    } else {
-      setSkills([])
-    }
-  }, [weaponType])
-
-  // Weapon type icon'u
-  const getWeaponIcon = (weaponType: string) => {
-    if (weaponType.includes('Staff')) return <Zap className="w-4 h-4" />
-    if (weaponType.includes('Sword')) return <Sword className="w-4 h-4" />
-    if (weaponType.includes('Shield')) return <Shield className="w-4 h-4" />
-    if (weaponType.includes('Fire')) return <Flame className="w-4 h-4" />
-    if (weaponType.includes('Frost')) return <Snowflake className="w-4 h-4" />
-    return <Sword className="w-4 h-4" />
+  // Equipment güncelle
+  const updateEquipment = (slot: string, item: AlbionItem | undefined) => {
+    setEquipment(prev => ({
+      ...prev,
+      [slot]: item
+    }))
   }
 
-  // Skill type icon'u
-  const getSkillIcon = (skillType: BuildSkill['skillType']) => {
-    switch (skillType) {
-      case 'Q': return <Zap className="w-4 h-4" />
-      case 'W': return <Shield className="w-4 h-4" />
-      case 'E': return <Sword className="w-4 h-4" />
-      case 'Passive': return <Heart className="w-4 h-4" />
-      case 'Consumable': return <Flame className="w-4 h-4" />
-      case 'Mount': return <Snowflake className="w-4 h-4" />
-      default: return <Zap className="w-4 h-4" />
+  // Consumable güncelle
+  const updateConsumable = (type: string, item: AlbionItem | undefined) => {
+    setConsumables(prev => ({
+      ...prev,
+      [type]: item
+    }))
+  }
+
+  // Spell güncelle
+  const updateSpell = (category: string, slot: string, spell: AlbionSpell | undefined) => {
+    setSpells(prev => ({
+      ...prev,
+      [category]: {
+        ...prev[category],
+        [slot]: spell
+      }
+    }))
+  }
+
+  // Tag ekle/çıkar
+  const addTag = (tag: string) => {
+    if (tag.trim() && !tags.includes(tag.trim())) {
+      setTags(prev => [...prev, tag.trim()])
     }
   }
 
-  // Skill güncelle
-  const updateSkill = (index: number, field: keyof BuildSkill, value: string) => {
-    const updatedSkills = [...skills]
-    updatedSkills[index] = { ...updatedSkills[index], [field]: value }
-    setSkills(updatedSkills)
-  }
-
-  // Skill sil
-  const removeSkill = (index: number) => {
-    setSkills(skills.filter((_, i) => i !== index))
-  }
-
-  // Skill ekle
-  const addSkill = () => {
-    setSkills([...skills, {
-      skillType: 'Q',
-      skillName: '',
-      description: ''
-    }])
+  const removeTag = (tagToRemove: string) => {
+    setTags(prev => prev.filter(tag => tag !== tagToRemove))
   }
 
   // Build oluştur
   const createBuild = async () => {
-    if (!buildName || !contentType || !weaponType) {
+    if (!title || !category) {
       setError('Please fill in all required fields')
-      return
-    }
-
-    if (skills.length === 0) {
-      setError('Please add at least one skill')
-      return
-    }
-
-    // Skill validasyonu
-    const invalidSkills = skills.filter(skill => !skill.skillName.trim())
-    if (invalidSkills.length > 0) {
-      setError('Please fill in all skill names')
       return
     }
 
@@ -166,11 +135,13 @@ export default function CreateBuildPage() {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          name: buildName,
-          description: buildDescription,
-          contentType,
-          weaponType,
-          skills
+          title,
+          category,
+          tags,
+          description,
+          equipment,
+          consumables,
+          spells
         })
       })
 
@@ -260,148 +231,201 @@ export default function CreateBuildPage() {
         )}
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Build Info */}
+          {/* Information Section */}
+          <div className="space-y-6">
+            <Card className="bg-gray-800 border-gray-700">
+              <CardHeader>
+                <CardTitle className="text-white flex items-center space-x-2">
+                  <Edit className="w-5 h-5" />
+                  <span>Build Information</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                    Build Title *
+                  </label>
+                  <Input
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                    placeholder="Enter build title..."
+                    className="bg-gray-700 border-gray-600 text-white placeholder-gray-400"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                    Category *
+                  </label>
+                  <Select value={category} onValueChange={setCategory}>
+                    <SelectTrigger className="bg-gray-700 border-gray-600 text-white">
+                      <SelectValue placeholder="Select category" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-gray-700 border-gray-600">
+                      {BUILD_CATEGORIES.map(cat => (
+                        <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                    Tags
+                  </label>
+                  <div className="space-y-2">
+                    <div className="flex space-x-2">
+                      <Input
+                        placeholder="Add tag..."
+                        onKeyPress={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault()
+                            addTag(e.currentTarget.value)
+                            e.currentTarget.value = ''
+                          }
+                        }}
+                        className="bg-gray-700 border-gray-600 text-white placeholder-gray-400"
+                      />
+                      <Button
+                        onClick={() => {
+                          const input = document.querySelector('input[placeholder="Add tag..."]') as HTMLInputElement
+                          if (input) {
+                            addTag(input.value)
+                            input.value = ''
+                          }
+                        }}
+                        size="sm"
+                        className="bg-blue-500 hover:bg-blue-600 text-white"
+                      >
+                        <Plus className="w-4 h-4" />
+                      </Button>
+                    </div>
+                    {tags.length > 0 && (
+                      <div className="flex flex-wrap gap-2">
+                        {tags.map(tag => (
+                          <div key={tag} className="flex items-center space-x-1 bg-blue-500/20 text-blue-300 px-2 py-1 rounded-full text-sm">
+                            <Tag className="w-3 h-3" />
+                            <span>{tag}</span>
+                            <Button
+                              onClick={() => removeTag(tag)}
+                              size="sm"
+                              variant="ghost"
+                              className="text-blue-300 hover:text-red-300 p-0 h-auto"
+                            >
+                              <X className="w-3 h-3" />
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                    Description
+                  </label>
+                  <Textarea
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    placeholder="Describe your build..."
+                    className="bg-gray-700 border-gray-600 text-white placeholder-gray-400"
+                    rows={3}
+                  />
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Equipment Section */}
+            <Card className="bg-gray-800 border-gray-700">
+              <CardHeader>
+                <CardTitle className="text-white flex items-center space-x-2">
+                  <Package className="w-5 h-5" />
+                  <span>Equipment</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {Object.entries(EQUIPMENT_SLOTS).map(([key, label]) => (
+                  <div key={key} className="flex items-center space-x-3">
+                    {getEquipmentIcon(key)}
+                    <span className="text-gray-300 text-sm flex-1">{label}</span>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="border-gray-600 text-gray-300 hover:bg-gray-700"
+                      onClick={() => {
+                        // TODO: Implement item search modal
+                        console.log('Select item for:', key)
+                      }}
+                    >
+                      {equipment[key] ? equipment[key]?.name : 'Select Item'}
+                    </Button>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+
+            {/* Consumables Section */}
+            <Card className="bg-gray-800 border-gray-700">
+              <CardHeader>
+                                 <CardTitle className="text-white flex items-center space-x-2">
+                   <Droplets className="w-5 h-5" />
+                   <span>Consumables</span>
+                 </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {Object.entries(CONSUMABLE_TYPES).map(([key, label]) => (
+                  <div key={key} className="flex items-center space-x-3">
+                    {getConsumableIcon(key)}
+                    <span className="text-gray-300 text-sm flex-1">{label}</span>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="border-gray-600 text-gray-300 hover:bg-gray-700"
+                      onClick={() => {
+                        // TODO: Implement item search modal
+                        console.log('Select consumable for:', key)
+                      }}
+                    >
+                      {consumables[key] ? consumables[key]?.name : 'Select Item'}
+                    </Button>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Spells Section */}
           <Card className="bg-gray-800 border-gray-700">
             <CardHeader>
-              <CardTitle className="text-white">Build Information</CardTitle>
+              <CardTitle className="text-white flex items-center space-x-2">
+                <Zap className="w-5 h-5" />
+                <span>Spells</span>
+              </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
-                  Build Name *
-                </label>
-                <Input
-                  value={buildName}
-                  onChange={(e) => setBuildName(e.target.value)}
-                  placeholder="Enter build name..."
-                  className="bg-gray-700 border-gray-600 text-white placeholder-gray-400"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
-                  Description
-                </label>
-                <Textarea
-                  value={buildDescription}
-                  onChange={(e) => setBuildDescription(e.target.value)}
-                  placeholder="Describe your build..."
-                  className="bg-gray-700 border-gray-600 text-white placeholder-gray-400"
-                  rows={3}
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
-                  Content Type *
-                </label>
-                <Select value={contentType} onValueChange={setContentType}>
-                  <SelectTrigger className="bg-gray-700 border-gray-600 text-white">
-                    <SelectValue placeholder="Select content type" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-gray-700 border-gray-600">
-                    {CONTENT_TYPES.map(type => (
-                      <SelectItem key={type} value={type}>{type}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
-                  Weapon Type *
-                </label>
-                <Select value={weaponType} onValueChange={setWeaponType}>
-                  <SelectTrigger className="bg-gray-700 border-gray-600 text-white">
-                    <SelectValue placeholder="Select weapon type" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-gray-700 border-gray-600">
-                    {WEAPON_TYPES.map(type => (
-                      <SelectItem key={type} value={type}>{type}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {weaponType && (
-                <div className="flex items-center space-x-2 p-3 bg-gray-700 rounded-lg">
-                  {getWeaponIcon(weaponType)}
-                  <span className="text-white font-medium">{weaponType}</span>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Skills */}
-          <Card className="bg-gray-800 border-gray-700">
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-white">Skills</CardTitle>
-                <Button
-                  onClick={addSkill}
-                  size="sm"
-                  className="bg-blue-500 hover:bg-blue-600 text-white"
-                >
-                  <Plus className="w-4 h-4 mr-2" />
-                  Add Skill
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent>
-              {skills.length === 0 ? (
-                <div className="text-center py-8 text-gray-400">
-                  <Zap className="w-12 h-12 mx-auto mb-4" />
-                  <p>Select a weapon type to load skill templates</p>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {skills.map((skill, index) => (
-                    <div key={index} className="p-4 bg-gray-700 rounded-lg border border-gray-600">
-                      <div className="flex items-center justify-between mb-3">
-                        <div className="flex items-center space-x-2">
-                          {getSkillIcon(skill.skillType)}
-                          <span className="text-white font-medium">{skill.skillType}</span>
-                        </div>
-                        <Button
-                          onClick={() => removeSkill(index)}
-                          size="sm"
-                          variant="ghost"
-                          className="text-red-400 hover:text-red-300"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </div>
-
-                      <div className="space-y-3">
-                        <div>
-                          <label className="block text-sm font-medium text-gray-300 mb-1">
-                            Skill Name
-                          </label>
-                          <Input
-                            value={skill.skillName}
-                            onChange={(e) => updateSkill(index, 'skillName', e.target.value)}
-                            placeholder="Enter skill name..."
-                            className="bg-gray-600 border-gray-500 text-white placeholder-gray-400"
-                          />
-                        </div>
-
-                        <div>
-                          <label className="block text-sm font-medium text-gray-300 mb-1">
-                            Description
-                          </label>
-                          <Textarea
-                            value={skill.description}
-                            onChange={(e) => updateSkill(index, 'description', e.target.value)}
-                            placeholder="Describe the skill..."
-                            className="bg-gray-600 border-gray-500 text-white placeholder-gray-400"
-                            rows={2}
-                          />
-                        </div>
-                      </div>
+            <CardContent className="space-y-6">
+              {Object.entries(SPELL_SLOTS).map(([category, slots]) => (
+                <div key={category} className="space-y-3">
+                  <h3 className="text-lg font-semibold text-white capitalize">{category}</h3>
+                  {Object.entries(slots).map(([slot, label]) => (
+                    <div key={slot} className="flex items-center space-x-3">
+                      {getSpellIcon(slot)}
+                      <span className="text-gray-300 text-sm flex-1">{label}</span>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="border-gray-600 text-gray-300 hover:bg-gray-700"
+                        onClick={() => {
+                          // TODO: Implement spell search modal
+                          console.log('Select spell for:', category, slot)
+                        }}
+                      >
+                        {spells[category]?.[slot] ? spells[category][slot]?.name : 'Select Spell'}
+                      </Button>
                     </div>
                   ))}
                 </div>
-              )}
+              ))}
             </CardContent>
           </Card>
         </div>

@@ -41,13 +41,16 @@ CREATE TABLE city_prices (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- Create builds table
+-- Create builds table with new structure
 CREATE TABLE builds (
     id SERIAL PRIMARY KEY,
-    name TEXT NOT NULL,
+    title TEXT NOT NULL,
+    category VARCHAR(100) NOT NULL,
+    tags TEXT[] DEFAULT '{}',
     description TEXT,
-    content_type VARCHAR(100) NOT NULL, -- Solo PvP, Group PvE, ZvZ, vb.
-    weapon_type VARCHAR(100) NOT NULL, -- Fire Staff, Holy Staff, Sword, vb.
+    equipment JSONB DEFAULT '{}',
+    consumables JSONB DEFAULT '{}',
+    spells JSONB DEFAULT '{}',
     creator_id TEXT NOT NULL,
     creator_name TEXT NOT NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
@@ -70,8 +73,9 @@ CREATE INDEX idx_black_market_items_table_id ON black_market_items(table_id);
 CREATE INDEX idx_city_prices_table_id ON city_prices(table_id);
 CREATE INDEX idx_city_prices_item_id ON city_prices(item_id);
 CREATE INDEX idx_builds_creator_id ON builds(creator_id);
-CREATE INDEX idx_builds_content_type ON builds(content_type);
-CREATE INDEX idx_builds_weapon_type ON builds(weapon_type);
+CREATE INDEX idx_builds_category ON builds(category);
+CREATE INDEX idx_builds_tags ON builds USING GIN(tags);
+CREATE INDEX idx_builds_created_at ON builds(created_at);
 CREATE INDEX idx_build_skills_build_id ON build_skills(build_id);
 
 -- Enable Row Level Security
@@ -157,17 +161,17 @@ CREATE POLICY "Users can delete city prices for their tables" ON city_prices
     );
 
 -- RLS Policies for builds
-CREATE POLICY "Users can view all builds" ON builds
+CREATE POLICY "Builds are viewable by everyone" ON builds
     FOR SELECT USING (true);
 
 CREATE POLICY "Users can insert their own builds" ON builds
-    FOR INSERT WITH CHECK (creator_id = (auth.jwt() ->> 'discordId'));
+    FOR INSERT WITH CHECK (auth.uid()::text = creator_id);
 
 CREATE POLICY "Users can update their own builds" ON builds
-    FOR UPDATE USING (creator_id = (auth.jwt() ->> 'discordId'));
+    FOR UPDATE USING (auth.uid()::text = creator_id);
 
 CREATE POLICY "Users can delete their own builds" ON builds
-    FOR DELETE USING (creator_id = (auth.jwt() ->> 'discordId'));
+    FOR DELETE USING (auth.uid()::text = creator_id);
 
 -- RLS Policies for build_skills
 CREATE POLICY "Users can view all build skills" ON build_skills
@@ -199,3 +203,16 @@ CREATE POLICY "Users can delete skills for their builds" ON build_skills
             AND creator_id = (auth.jwt() ->> 'discordId')
         )
     ); 
+
+-- Create function to update updated_at timestamp
+CREATE OR REPLACE FUNCTION update_updated_at_column()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = NOW();
+    RETURN NEW;
+END;
+$$ language 'plpgsql';
+
+-- Create trigger for builds
+CREATE TRIGGER update_builds_updated_at BEFORE UPDATE ON builds
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column(); 

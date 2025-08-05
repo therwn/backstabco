@@ -8,11 +8,8 @@ import { CreateBuildData } from '@/types/albion'
 export async function GET() {
   try {
     console.log('API: GET /api/builds called')
-    
     const builds = await getAllBuilds()
-    
     console.log('API: Builds fetched successfully, count:', builds.length)
-    
     return NextResponse.json(builds)
   } catch (error) {
     console.error('API: Error fetching builds:', error)
@@ -27,8 +24,6 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   try {
     console.log('API: POST /api/builds called')
-    
-    // Session kontrolü
     const session = await getServerSession(authOptions)
     if (!session?.user?.discordId) {
       console.log('API: Unauthorized - no session or discordId')
@@ -38,35 +33,35 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Request body'yi parse et
     const body = await request.json()
     const buildData: CreateBuildData = {
-      name: body.name,
+      title: body.title,
+      category: body.category,
+      tags: body.tags || [],
       description: body.description,
-      contentType: body.contentType,
-      weaponType: body.weaponType,
-      skills: body.skills || []
+      equipment: body.equipment || {},
+      consumables: body.consumables || {},
+      spells: body.spells || {}
     }
 
     console.log('API: Build data received:', {
-      name: buildData.name,
-      contentType: buildData.contentType,
-      weaponType: buildData.weaponType,
-      skillsCount: buildData.skills.length
+      title: buildData.title,
+      category: buildData.category,
+      tags: buildData.tags,
+      equipmentKeys: Object.keys(buildData.equipment || {}),
+      consumablesKeys: Object.keys(buildData.consumables || {}),
+      spellsKeys: Object.keys(buildData.spells || {})
     })
 
-    // Validasyon
-    if (!buildData.name || !buildData.contentType || !buildData.weaponType) {
+    if (!buildData.title || !buildData.category) {
       console.log('API: Validation failed - missing required fields')
       return NextResponse.json(
-        { error: 'Missing required fields: name, contentType, weaponType' },
+        { error: 'Missing required fields: title, category' },
         { status: 400 }
       )
     }
 
-    // Build'i oluştur
     const newBuild = await createBuild(buildData, session.user.discordId)
-    
     if (!newBuild) {
       console.error('API: Failed to create build')
       return NextResponse.json(
@@ -76,7 +71,6 @@ export async function POST(request: NextRequest) {
     }
 
     console.log('API: Build created successfully, ID:', newBuild.id)
-    
     return NextResponse.json(newBuild, { status: 201 })
   } catch (error) {
     console.error('API: Error creating build:', error)

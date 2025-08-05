@@ -11,9 +11,7 @@ export async function GET(
 ) {
   try {
     console.log('API: GET /api/builds/[id] called with ID:', params.id)
-    
     const build = await getBuildById(params.id)
-    
     if (!build) {
       console.log('API: Build not found for ID:', params.id)
       return NextResponse.json(
@@ -21,9 +19,7 @@ export async function GET(
         { status: 404 }
       )
     }
-
     console.log('API: Build fetched successfully:', build.id)
-    
     return NextResponse.json(build)
   } catch (error) {
     console.error('API: Error fetching build:', error)
@@ -41,8 +37,6 @@ export async function PUT(
 ) {
   try {
     console.log('API: PUT /api/builds/[id] called with ID:', params.id)
-    
-    // Session kontrolü
     const session = await getServerSession(authOptions)
     if (!session?.user?.discordId) {
       console.log('API: Unauthorized - no session or discordId')
@@ -52,26 +46,27 @@ export async function PUT(
       )
     }
 
-    // Request body'yi parse et
     const body = await request.json()
     const updateData: UpdateBuildData = {
-      name: body.name,
+      title: body.title,
+      category: body.category,
+      tags: body.tags,
       description: body.description,
-      contentType: body.contentType,
-      weaponType: body.weaponType,
-      skills: body.skills
+      equipment: body.equipment,
+      consumables: body.consumables,
+      spells: body.spells
     }
 
     console.log('API: Update data received:', {
-      name: updateData.name,
-      contentType: updateData.contentType,
-      weaponType: updateData.weaponType,
-      skillsCount: updateData.skills?.length || 0
+      title: updateData.title,
+      category: updateData.category,
+      tags: updateData.tags,
+      equipmentKeys: Object.keys(updateData.equipment || {}),
+      consumablesKeys: Object.keys(updateData.consumables || {}),
+      spellsKeys: Object.keys(updateData.spells || {})
     })
 
-    // Build'i güncelle
     const success = await updateBuild(params.id, updateData, session.user.discordId)
-    
     if (!success) {
       console.error('API: Failed to update build')
       return NextResponse.json(
@@ -81,8 +76,6 @@ export async function PUT(
     }
 
     console.log('API: Build updated successfully, ID:', params.id)
-    
-    // Güncellenmiş build'i döndür
     const updatedBuild = await getBuildById(params.id)
     return NextResponse.json(updatedBuild)
   } catch (error) {
@@ -101,8 +94,6 @@ export async function DELETE(
 ) {
   try {
     console.log('API: DELETE /api/builds/[id] called with ID:', params.id)
-    
-    // Session kontrolü
     const session = await getServerSession(authOptions)
     if (!session?.user?.discordId) {
       console.log('API: Unauthorized - no session or discordId')
@@ -112,9 +103,7 @@ export async function DELETE(
       )
     }
 
-    // Build'i sil
     const success = await deleteBuild(params.id, session.user.discordId)
-    
     if (!success) {
       console.error('API: Failed to delete build')
       return NextResponse.json(
@@ -124,7 +113,6 @@ export async function DELETE(
     }
 
     console.log('API: Build deleted successfully, ID:', params.id)
-    
     return NextResponse.json({ success: true })
   } catch (error) {
     console.error('API: Error deleting build:', error)

@@ -137,49 +137,156 @@ export interface TableItem {
   }[]
 }
 
-// Build sistemi için yeni tipler
+// Build System - Gerçek Albion Online Spell Sistemi
+export interface AlbionSpell {
+  uniqueName: string
+  name: string
+  description: string
+  slot: 'mainhand1' | 'mainhand2' | 'mainhand3' | 'offhand1' | 'offhand2' | 'head1' | 'head2' | 'armor1' | 'armor2' | 'shoes1' | 'shoes2'
+  category: 'weapon' | 'head' | 'armor' | 'shoes'
+  type: 'active' | 'passive'
+}
+
+export interface AlbionEquipment {
+  weapon?: AlbionItem
+  offhand?: AlbionItem
+  helmet?: AlbionItem
+  helmetOption?: AlbionItem
+  chest?: AlbionItem
+  chestOption?: AlbionItem
+  boots?: AlbionItem
+  bootsOption?: AlbionItem
+  cape?: AlbionItem
+  capeOption?: AlbionItem
+}
+
+export interface AlbionConsumables {
+  potion?: AlbionItem
+  potionOption?: AlbionItem
+  food?: AlbionItem
+  foodOption?: AlbionItem
+}
+
+export interface AlbionSpells {
+  weapon: {
+    q?: AlbionSpell
+    w?: AlbionSpell
+    e?: AlbionSpell
+    passive?: AlbionSpell
+  }
+  head: {
+    d?: AlbionSpell
+    passive?: AlbionSpell
+  }
+  armor: {
+    r?: AlbionSpell
+    passive?: AlbionSpell
+  }
+  shoes: {
+    f?: AlbionSpell
+    passive?: AlbionSpell
+  }
+}
+
 export interface Build {
   id: string
-  name: string
+  title: string
+  category: string
+  tags: string[]
   description: string | null
-  contentType: string
-  weaponType: string
+  equipment: AlbionEquipment
+  consumables: AlbionConsumables
+  spells: AlbionSpells
   creator: string
   creatorName: string
   createdAt: Date
   updatedAt: Date
-  skills: BuildSkill[]
-}
-
-export interface BuildSkill {
-  id: string
-  buildId: string
-  skillType: 'Q' | 'W' | 'E' | 'Passive' | 'Consumable' | 'Mount'
-  skillName: string
-  description: string | null
-  createdAt: Date
 }
 
 export interface CreateBuildData {
-  name: string
+  title: string
+  category: string
+  tags: string[]
   description?: string
-  contentType: string
-  weaponType: string
-  skills: Omit<BuildSkill, 'id' | 'buildId' | 'createdAt'>[]
+  equipment: AlbionEquipment
+  consumables: AlbionConsumables
+  spells: AlbionSpells
 }
 
 export interface UpdateBuildData {
-  name?: string
+  title?: string
+  category?: string
+  tags?: string[]
   description?: string
-  contentType?: string
-  weaponType?: string
-  skills?: Omit<BuildSkill, 'id' | 'buildId' | 'createdAt'>[]
+  equipment?: AlbionEquipment
+  consumables?: AlbionConsumables
+  spells?: AlbionSpells
 }
+
+// Build Categories
+export const BUILD_CATEGORIES = [
+  'Solo PvP',
+  'Group PvP', 
+  'ZvZ',
+  'Solo PvE',
+  'Group PvE',
+  'Dungeon',
+  'Corrupted Dungeon',
+  'Arena',
+  'Gathering',
+  'Faction Warfare'
+] as const
+
+export type BuildCategory = typeof BUILD_CATEGORIES[number]
+
+// Equipment Slots
+export const EQUIPMENT_SLOTS = {
+  weapon: 'Weapon',
+  offhand: 'Off-Hand',
+  helmet: 'Helmet',
+  helmetOption: 'Helmet Option',
+  chest: 'Chest',
+  chestOption: 'Chest Option', 
+  boots: 'Boots',
+  bootsOption: 'Boots Option',
+  cape: 'Cape',
+  capeOption: 'Cape Option'
+} as const
+
+// Spell Slots
+export const SPELL_SLOTS = {
+  weapon: {
+    q: 'Q Skill',
+    w: 'W Skill', 
+    e: 'E Skill',
+    passive: 'Passive'
+  },
+  head: {
+    d: 'D Skill',
+    passive: 'Passive'
+  },
+  armor: {
+    r: 'R Skill',
+    passive: 'Passive'
+  },
+  shoes: {
+    f: 'F Skill',
+    passive: 'Passive'
+  }
+} as const
+
+// Consumable Types
+export const CONSUMABLE_TYPES = {
+  potion: 'Potion',
+  potionOption: 'Potion Option',
+  food: 'Food',
+  foodOption: 'Food Option'
+} as const
 
 // Content type ve weapon type seçenekleri
 export const CONTENT_TYPES = [
   'Solo PvP',
-  'Group PvP', 
+  'Group PvP',
   'ZvZ',
   'Solo PvE',
   'Group PvE',
