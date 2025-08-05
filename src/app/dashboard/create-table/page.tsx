@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input'
 import { Switch } from '@/components/ui/switch'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
+import { Skeleton } from '@/components/ui/skeleton'
 import { CheckCircle2Icon, AlertCircleIcon, InfoIcon } from 'lucide-react'
 import { AlbionItem, searchItems, getAvailableTiersForItem, getAvailableEnchantmentsForItem, getItemImageUrl } from '@/lib/albion-api'
 import { AlbionCity, ALBION_CITIES } from '@/types/albion'
@@ -35,6 +36,104 @@ interface SelectedItem {
   isEditing: boolean
   isCollapsed: boolean
 }
+
+// Skeleton component'leri
+const CreateTableSkeleton = () => (
+  <div className="min-h-screen bg-black-900 text-white">
+    <div className="container mx-auto px-4 py-8">
+      {/* Header Skeleton */}
+      <div className="flex items-center justify-between mb-8">
+        <div className="flex items-center space-x-4">
+          <Skeleton className="h-10 w-10" />
+          <div className="space-y-2">
+            <Skeleton className="h-6 w-48" />
+            <Skeleton className="h-4 w-32" />
+          </div>
+        </div>
+        <div className="flex items-center space-x-4">
+          <Skeleton className="h-10 w-24" />
+          <Skeleton className="h-10 w-24" />
+        </div>
+      </div>
+
+      {/* Table Info Skeleton */}
+      <Card className="bg-black-800 border border-gray-600 mb-8">
+        <CardHeader>
+          <Skeleton className="h-8 w-64" />
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-2">
+              <Skeleton className="h-4 w-20" />
+              <Skeleton className="h-10 w-full" />
+            </div>
+            <div className="space-y-2">
+              <Skeleton className="h-4 w-24" />
+              <Skeleton className="h-10 w-full" />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Search Section Skeleton */}
+      <Card className="bg-black-800 border border-gray-600 mb-8">
+        <CardHeader>
+          <Skeleton className="h-6 w-32" />
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center space-x-2">
+            <Skeleton className="h-10 w-full" />
+            <Skeleton className="h-10 w-24" />
+          </div>
+          <div className="mt-4 space-y-2">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="flex items-center space-x-3 p-3 border border-gray-600 rounded">
+                <Skeleton className="h-12 w-12 rounded" />
+                <div className="flex-1">
+                  <Skeleton className="h-4 w-32 mb-1" />
+                  <Skeleton className="h-3 w-24" />
+                </div>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Items Section Skeleton */}
+      <div className="space-y-6">
+        {[1, 2].map((i) => (
+          <Card key={i} className="bg-black-800 border border-gray-600">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-4">
+                  <Skeleton className="h-16 w-16 rounded" />
+                  <div className="space-y-2">
+                    <Skeleton className="h-5 w-32" />
+                    <Skeleton className="h-4 w-24" />
+                  </div>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Skeleton className="h-8 w-8" />
+                  <Skeleton className="h-8 w-8" />
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                {[1, 2, 3, 4].map((j) => (
+                  <div key={j} className="space-y-2">
+                    <Skeleton className="h-4 w-20" />
+                    <Skeleton className="h-8 w-full" />
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    </div>
+  </div>
+)
 
 // Shadcn Alert Component
 const CustomAlert = ({ message, type, onClose }: { message: string; type: 'success' | 'error' | 'info'; onClose: () => void }) => {
@@ -140,16 +239,7 @@ export default function CreateTablePage() {
 
   // Session yükleniyor
   if (status === 'loading') {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-black-900 via-black-800 to-black-900 relative overflow-hidden">
-        <div className="flex items-center justify-center min-h-screen">
-          <div className="text-center">
-            <div className="w-8 h-8 border-2 border-[#F3B22D] border-t-transparent rounded-full animate-spin mx-auto"></div>
-            <p className="text-gray-400 mt-2">Yükleniyor...</p>
-          </div>
-        </div>
-      </div>
-    )
+    return <CreateTableSkeleton />
   }
 
   // Session yoksa auth sayfasına yönlendir

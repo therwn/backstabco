@@ -6,6 +6,7 @@ import { motion } from 'framer-motion'
 import { Plus, Eye, Trash2, LogOut, User, Calendar, Package } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Skeleton } from '@/components/ui/skeleton'
 import { useSession, signOut } from 'next-auth/react'
 import Logo from '@/assets/logo.svg'
 import Image from 'next/image'
@@ -20,6 +21,83 @@ interface Table {
   createdAt: Date
   items: any[]
 }
+
+// Skeleton component'leri
+const TableSkeleton = () => (
+  <Card className="bg-black-800 border border-gray-600 hover:border-[#F3B22D] transition-colors">
+    <CardHeader className="pb-3">
+      <div className="flex items-center justify-between">
+        <Skeleton className="h-6 w-32" />
+        <Skeleton className="h-8 w-8 rounded-full" />
+      </div>
+    </CardHeader>
+    <CardContent className="pt-0">
+      <div className="space-y-3">
+        <div className="flex items-center space-x-2">
+          <Skeleton className="h-4 w-4" />
+          <Skeleton className="h-4 w-24" />
+        </div>
+        <div className="flex items-center space-x-2">
+          <Skeleton className="h-4 w-4" />
+          <Skeleton className="h-4 w-20" />
+        </div>
+        <div className="flex items-center space-x-2">
+          <Skeleton className="h-4 w-4" />
+          <Skeleton className="h-4 w-28" />
+        </div>
+      </div>
+      <div className="flex space-x-2 mt-4">
+        <Skeleton className="h-8 w-16" />
+        <Skeleton className="h-8 w-16" />
+      </div>
+    </CardContent>
+  </Card>
+)
+
+const DashboardSkeleton = () => (
+  <div className="min-h-screen bg-black-900 text-white">
+    <div className="container mx-auto px-4 py-8">
+      {/* Header Skeleton */}
+      <div className="flex items-center justify-between mb-8">
+        <div className="flex items-center space-x-4">
+          <Skeleton className="h-12 w-12" />
+          <div className="space-y-2">
+            <Skeleton className="h-6 w-32" />
+            <Skeleton className="h-4 w-24" />
+          </div>
+        </div>
+        <div className="flex items-center space-x-4">
+          <Skeleton className="h-10 w-24" />
+          <Skeleton className="h-10 w-10 rounded-full" />
+        </div>
+      </div>
+
+      {/* Stats Skeleton */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        {[1, 2, 3].map((i) => (
+          <Card key={i} className="bg-black-800 border border-gray-600">
+            <CardContent className="p-6">
+              <div className="flex items-center space-x-4">
+                <Skeleton className="h-12 w-12 rounded-full" />
+                <div className="space-y-2">
+                  <Skeleton className="h-4 w-20" />
+                  <Skeleton className="h-6 w-16" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      {/* Tables Grid Skeleton */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {[1, 2, 3, 4, 5, 6].map((i) => (
+          <TableSkeleton key={i} />
+        ))}
+      </div>
+    </div>
+  </div>
+)
 
 export default function DashboardPage() {
   const router = useRouter()
@@ -100,53 +178,37 @@ export default function DashboardPage() {
       }
     } catch (error) {
       console.error('Error deleting table:', error)
-      alert('Tablo silinirken bir hata oluştu!')
+      alert('Tablo silinirken hata oluştu!')
     }
   }
 
   const handleSignOut = async () => {
     try {
-      await signOut({ 
-        callbackUrl: '/auth',
-        redirect: true 
-      })
+      await signOut({ redirect: false })
+      router.push('/auth')
     } catch (error) {
       console.error('Sign out error:', error)
-      // Hata durumunda manuel yönlendirme
       router.push('/auth')
     }
   }
 
   const isTableOwner = (table: Table) => {
-    return session?.user?.discordId === table.creator
+    return table.creator === session?.user?.discordId
   }
 
-  // Session yükleniyor
-  if (status === 'loading') {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-black-900 via-black-800 to-black-900 relative overflow-hidden">
-        <div className="flex items-center justify-center min-h-screen">
-          <div className="text-center">
-            <div className="w-8 h-8 border-2 border-[#F3B22D] border-t-transparent rounded-full animate-spin mx-auto"></div>
-            <p className="text-gray-400 mt-2">Yükleniyor...</p>
-          </div>
-        </div>
-      </div>
-    )
+  // Loading durumunda skeleton göster
+  if (status === 'loading' || isLoading) {
+    return <DashboardSkeleton />
   }
 
   // Session yoksa auth sayfasına yönlendir
   if (status === 'unauthenticated') {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-black-900 via-black-800 to-black-900 relative overflow-hidden">
-        <div className="flex items-center justify-center min-h-screen">
-          <div className="text-center">
-            <div className="w-8 h-8 border-2 border-[#F3B22D] border-t-transparent rounded-full animate-spin mx-auto"></div>
-            <p className="text-gray-400 mt-2">Yönlendiriliyor...</p>
-          </div>
-        </div>
-      </div>
-    )
+    return null
+  }
+
+  // Session yoksa loading göster
+  if (!session) {
+    return <DashboardSkeleton />
   }
 
   return (
