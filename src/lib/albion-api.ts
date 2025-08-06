@@ -514,20 +514,41 @@ function extractTier(itemId: string): number {
 
 // Kategori çıkar (geliştirilmiş)
 function extractCategory(itemId: string): string {
+  // Bags
   if (itemId.includes('_BAG')) return ITEM_CATEGORIES.BAGS
+  
+  // Capes
   if (itemId.includes('_CAPE') || itemId.includes('CAPEITEM_')) return ITEM_CATEGORIES.CAPES
+  
+  // Mounts
   if (itemId.includes('_MOUNT') || itemId.includes('_FARM_')) return ITEM_CATEGORIES.MOUNTS
+  
+  // Armor (including shoes)
   if (itemId.includes('_ARMOR') || itemId.includes('_HEAD_') || itemId.includes('_BODY_') || itemId.includes('_LEGS_') || itemId.includes('_FEET_') || itemId.includes('_HAND_') || itemId.includes('_SHOULDER_') || itemId.includes('_SHOES_')) return ITEM_CATEGORIES.ARMOR
+  
+  // Weapons (including artefacts and off-hand items)
   if (itemId.includes('_WEAPON') || itemId.includes('_SWORD') || itemId.includes('_BOW') || itemId.includes('_STAFF') || itemId.includes('_MACE') || itemId.includes('_AXE') || itemId.includes('_DAGGER') || itemId.includes('_SPEAR') || itemId.includes('_CROSSBOW') || itemId.includes('_FIRE_STAFF') || itemId.includes('_FROST_STAFF') || itemId.includes('_ARCANE_STAFF') || itemId.includes('_HOLY_STAFF') || itemId.includes('_NATURE_STAFF') || itemId.includes('_MAIN_') || itemId.includes('_2H_') || itemId.includes('_OFF_') || itemId.includes('_ARTEFACT_')) return ITEM_CATEGORIES.WEAPONS
+  
+  // Tools
   if (itemId.includes('_TOOL')) return ITEM_CATEGORIES.TOOLS
+  
+  // Consumables (including alchemy and meals)
   if (itemId.includes('_POTION') || itemId.includes('_FOOD') || itemId.includes('_COOKING') || itemId.includes('_ALCHEMY') || itemId.includes('_MEAL_')) return ITEM_CATEGORIES.CONSUMABLES
+  
+  // Materials (including all resources)
   if (itemId.includes('_MATERIAL') || itemId.includes('_RESOURCE') || itemId.includes('_WOOD') || itemId.includes('_ORE') || itemId.includes('_FIBER') || itemId.includes('_HIDE') || itemId.includes('_STONEBLOCK') || itemId.includes('_PLANKS') || itemId.includes('_METALBAR') || itemId.includes('_CLOTH') || itemId.includes('_LEATHER') || itemId.includes('_BRICK') || itemId.includes('_CARROT') || itemId.includes('_BEAN') || itemId.includes('_WHEAT') || itemId.includes('_TURNIP') || itemId.includes('_CABBAGE') || itemId.includes('_POTATO') || itemId.includes('_CORN') || itemId.includes('_PUMPKIN') || itemId.includes('_AGARIC') || itemId.includes('_COMFREY') || itemId.includes('_BURDOCK') || itemId.includes('_TEASEL') || itemId.includes('_FOXGLOVE') || itemId.includes('_MULLEIN') || itemId.includes('_YARROW') || itemId.includes('_EGG') || itemId.includes('_MILK') || itemId.includes('_FISH_')) return ITEM_CATEGORIES.MATERIALS
+  
+  // Furniture
   if (itemId.includes('_FURNITURE')) return ITEM_CATEGORIES.FURNITURE
+  
+  // Jewelry
   if (itemId.includes('_RING') || itemId.includes('_NECKLACE')) return ITEM_CATEGORIES.JEWELRY
+  
+  // Farming
   if (itemId.includes('_FARM_')) return ITEM_CATEGORIES.FARMING
   
-  // Special categories that should be filtered out
-  if (itemId.includes('_FACTION_') || itemId.includes('_KILL_EMOTE_') || itemId.includes('_TRASH') || itemId.includes('_UNIQUE_') || itemId.includes('_SKIN_') || itemId.includes('_UNLOCK_')) return 'other'
+  // Special categories that should be filtered out (non-game items)
+  if (itemId.includes('_FACTION_') || itemId.includes('_KILL_EMOTE_') || itemId.includes('_TRASH') || itemId.includes('_UNIQUE_') || itemId.includes('_SKIN_') || itemId.includes('_UNLOCK_') || itemId.includes('_JOURNAL_') || itemId.includes('_LABOURER_') || itemId.includes('_LOOTBAG_') || itemId.includes('_RANDOM_DUNGEON_')) return 'other'
   
   return 'other'
 }
