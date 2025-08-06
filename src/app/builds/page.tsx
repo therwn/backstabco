@@ -88,7 +88,7 @@ export default function BuildsPage() {
 
   if (status === 'loading') {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black text-white">
+      <div className="min-h-screen bg-black-900 text-white">
         <div className="container mx-auto px-4 py-8">
           <div className="flex items-center justify-between mb-8">
             <Skeleton className="h-8 w-48" />
@@ -106,12 +106,12 @@ export default function BuildsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black text-white">
+    <div className="min-h-screen bg-black-900 text-white">
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-yellow-400 to-orange-500 bg-clip-text text-transparent">
+            <h1 className="text-3xl font-bold text-white">
               Albion Builds
             </h1>
             <p className="text-gray-400 mt-2">
@@ -121,7 +121,7 @@ export default function BuildsPage() {
           
           <Button 
             onClick={() => router.push('/builds/create')}
-            className="bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white border-0"
+            className="bg-[#F3B22D] hover:bg-[#E5A41A] text-black border-0"
           >
             <Plus className="w-4 h-4 mr-2" />
             Create Build
@@ -136,15 +136,15 @@ export default function BuildsPage() {
               placeholder="Search builds..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 bg-gray-800 border-gray-700 text-white placeholder-gray-400"
+              className="pl-10 bg-black-800 border border-gray-600 text-white placeholder-gray-400 focus:border-[#F3B22D]"
             />
           </div>
           
           <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-            <SelectTrigger className="bg-gray-800 border-gray-700 text-white">
+            <SelectTrigger className="bg-black-800 border border-gray-600 text-white focus:border-[#F3B22D]">
               <SelectValue placeholder="Category" />
             </SelectTrigger>
-            <SelectContent className="bg-gray-800 border-gray-700">
+            <SelectContent className="bg-black-800 border border-gray-600">
               <SelectItem value="all">All Categories</SelectItem>
               {BUILD_CATEGORIES.map(category => (
                 <SelectItem key={category} value={category}>{category}</SelectItem>
@@ -158,7 +158,7 @@ export default function BuildsPage() {
               setCategoryFilter('all')
             }}
             variant="outline"
-            className="border-gray-600 text-gray-300 hover:bg-gray-700"
+            className="border border-gray-600 text-gray-300 hover:bg-black-800 hover:border-[#F3B22D]"
           >
             <Filter className="w-4 h-4 mr-2" />
             Clear Filters
@@ -182,7 +182,7 @@ export default function BuildsPage() {
             </div>
             <Button
               onClick={() => router.push('/builds/create')}
-              className="bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white border-0"
+              className="bg-[#F3B22D] hover:bg-[#E5A41A] text-black border-0"
             >
               <Plus className="w-4 h-4 mr-2" />
               Create First Build
@@ -191,7 +191,7 @@ export default function BuildsPage() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredBuilds.map((build) => (
-              <Card key={build.id} className="bg-gray-800 border-gray-700 hover:border-gray-600 transition-all duration-200 hover:shadow-lg hover:shadow-yellow-500/10">
+              <Card key={build.id} className="bg-black-800 border border-gray-600 hover:border-[#F3B22D] transition-colors">
                 <CardHeader className="pb-3">
                   <div className="flex items-start justify-between">
                     <div className="flex items-center space-x-2">

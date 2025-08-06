@@ -558,7 +558,7 @@ function extractSubcategory(itemId: string): string {
   if (itemId.includes('_2H_')) return 'two-handed'
   if (itemId.includes('_1H_')) return 'one-handed'
   if (itemId.includes('_HEAD_')) return 'head'
-  if (itemId.includes('_BODY_')) return 'body'
+  if (itemId.includes('_BODY_') || itemId.includes('_ARMOR_')) return 'body'
   if (itemId.includes('_LEGS_')) return 'legs'
   if (itemId.includes('_FEET_') || itemId.includes('_SHOES_')) return 'feet'
   if (itemId.includes('_HAND_')) return 'hands'
@@ -681,7 +681,7 @@ export async function listTierItems(tier: number): Promise<AlbionItem[]> {
     console.error(`Error listing tier ${tier} items:`, error)
     return []
   }
-} 
+}
 
 // Item seçimi sonrası mevcut tier'ları getir
 export async function getAvailableTiersForItem(itemName: string): Promise<number[]> {
@@ -784,4 +784,4 @@ export function extractTierAndEnchantment(itemId: string): { tier: number; encha
   const enchantment = enchantMatch ? parseInt(enchantMatch[1]) : 0
   
   return { tier, enchantment }
-} 
+}
