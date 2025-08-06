@@ -11,13 +11,15 @@ interface SearchModalProps {
   onClose: () => void
   onItemSelect: (item: AlbionItem) => void
   placeholder?: string
+  categoryFilter?: string // Add category filter prop
 }
 
 export function SearchModal({ 
   isOpen, 
   onClose, 
   onItemSelect, 
-  placeholder = "Item ara..." 
+  placeholder = "Item ara...",
+  categoryFilter // Add category filter parameter
 }: SearchModalProps) {
   const [query, setQuery] = useState('')
   const [items, setItems] = useState<AlbionItem[]>([])
@@ -38,7 +40,15 @@ export function SearchModal({
         setIsLoading(true)
         try {
           const results = await searchItems(query)
-          setItems(results.slice(0, 10))
+          // Filter by category if provided
+          let filteredResults = results
+          if (categoryFilter) {
+            filteredResults = results.filter(item => 
+              item.category === categoryFilter || 
+              item.subcategory === categoryFilter
+            )
+          }
+          setItems(filteredResults.slice(0, 10))
           setSelectedIndex(-1)
         } catch (error) {
           console.error('Search error:', error)
@@ -52,7 +62,7 @@ export function SearchModal({
     }, 300)
 
     return () => clearTimeout(timeoutId)
-  }, [query])
+  }, [query, categoryFilter])
 
   // Keyboard navigation
   useEffect(() => {

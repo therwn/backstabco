@@ -210,7 +210,13 @@ export default function TableViewPage() {
   // Show custom alert
   const showAlert = useCallback((message: string, type: 'success' | 'error' | 'info') => {
     setAlert({ message, type })
+    // Auto close after 5 seconds
     setTimeout(() => setAlert(null), 5000)
+  }, [])
+
+  // Close alert manually
+  const closeAlert = useCallback(() => {
+    setAlert(null)
   }, [])
 
   const fetchTableDetails = useCallback(async (tableId: string) => {
@@ -546,7 +552,7 @@ export default function TableViewPage() {
           <CustomAlert
             message={alert.message}
             type={alert.type}
-            onClose={() => setAlert(null)}
+            onClose={closeAlert}
           />
         )}
       </AnimatePresence>
@@ -558,7 +564,7 @@ export default function TableViewPage() {
           router.push('/dashboard')
         }
       }}>
-        <DialogContent className="bg-black-800 border border-gray-600">
+        <DialogContent className="bg-black-800 border border-gray-600 backdrop-blur-sm">
           <DialogHeader>
             <div className="text-center mb-6">
               <Lock className="w-12 h-12 text-[#F3B22D] mx-auto mb-4" />

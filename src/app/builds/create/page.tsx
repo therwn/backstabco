@@ -15,6 +15,7 @@ import { ArrowLeft, Plus, Trash2, Save, Zap, Sword, Shield, Heart, Flame, Snowfl
 import { SearchModal } from '@/components/ui/search-modal'
 import { SpellSearchModal } from '@/components/ui/spell-search-modal'
 import { AlbionItem } from '@/lib/albion-api'
+import Image from 'next/image'
 
 // Equipment slot icons
 const getEquipmentIcon = (slot: string) => {
@@ -49,6 +50,19 @@ const getSpellIcon = (slot: string) => {
     case 'f': return <Snowflake className="w-4 h-4" />
     case 'passive': return <Eye className="w-4 h-4" />
     default: return <Zap className="w-4 h-4" />
+  }
+}
+
+// Equipment slot categories for filtering
+const getSlotCategory = (slot: string) => {
+  switch (slot) {
+    case 'weapon': return 'weapons'
+    case 'offhand': return 'weapons'
+    case 'helmet': case 'helmetOption': return 'armor'
+    case 'chest': case 'chestOption': return 'armor'
+    case 'boots': case 'bootsOption': return 'armor'
+    case 'cape': case 'capeOption': return 'accessories'
+    default: return 'weapons'
   }
 }
 
@@ -150,47 +164,249 @@ export default function CreateBuildPage() {
 
   const removeItem = (type: 'equipment' | 'consumables', slot: string) => {
     if (type === 'equipment') {
-      setEquipment(prev => ({
-        ...prev,
-        [slot]: undefined
-      }))
-    } else if (type === 'consumables') {
-      setConsumables(prev => ({
-        ...prev,
-        [slot]: undefined
-      }))
+      updateEquipment(slot, undefined)
+    } else {
+      updateConsumable(slot, undefined)
     }
   }
 
   const handleSpellSelect = (spell: any) => {
     if (currentSpellSelection) {
-      setSpells(prev => ({
-        ...prev,
-        [currentSpellSelection.category]: {
-          ...prev[currentSpellSelection.category],
-          [currentSpellSelection.slot]: spell
-        }
-      }))
+      updateSpell(currentSpellSelection.category, currentSpellSelection.slot, spell)
     }
+    setShowSpellModal(false)
     setCurrentSpellSelection(null)
   }
 
   const openSpellModal = (category: string, slot: string) => {
-    // Get weapon type from selected weapon
-    const weaponType = equipment.weapon?.weaponType || ''
-    setCurrentSpellSelection({ category, slot, weaponType })
+    setCurrentSpellSelection({ category, slot })
     setShowSpellModal(true)
   }
 
   const removeSpell = (category: string, slot: string) => {
-    setSpells(prev => ({
-      ...prev,
-      [category]: {
-        ...prev[category],
-        [slot]: undefined
-      }
-    }))
+    updateSpell(category, slot, undefined)
   }
+
+  // Character Inventory View Component
+  const CharacterInventoryView = () => (
+    <div className="bg-black-800 border border-gray-600 rounded-lg p-6">
+      <h3 className="text-white font-bold text-lg mb-4">Character Inventory</h3>
+      <div className="grid grid-cols-3 gap-4">
+        {/* Helmet */}
+        <div className="flex flex-col items-center">
+          <div 
+            className="w-16 h-16 border-2 border-gray-600 rounded-lg flex items-center justify-center cursor-pointer hover:border-[#F3B22D] transition-colors"
+            onClick={() => openItemModal('equipment', 'helmet')}
+          >
+            {equipment.helmet ? (
+              <Image 
+                src={`https://render.albiononline.com/v1/item/${equipment.helmet.id}`} 
+                alt={equipment.helmet.name} 
+                width={48} 
+                height={48} 
+                className="w-12 h-12 object-contain"
+                onError={(e) => {
+                  const target = e.target as HTMLImageElement
+                  target.src = '/placeholder-item.png'
+                }}
+              />
+            ) : (
+              <Heart className="w-6 h-6 text-gray-400" />
+            )}
+          </div>
+          <span className="text-gray-400 text-xs mt-1">Helmet</span>
+        </div>
+
+        {/* Cape */}
+        <div className="flex flex-col items-center">
+          <div 
+            className="w-16 h-16 border-2 border-gray-600 rounded-lg flex items-center justify-center cursor-pointer hover:border-[#F3B22D] transition-colors"
+            onClick={() => openItemModal('equipment', 'cape')}
+          >
+            {equipment.cape ? (
+              <Image 
+                src={`https://render.albiononline.com/v1/item/${equipment.cape.id}`} 
+                alt={equipment.cape.name} 
+                width={48} 
+                height={48} 
+                className="w-12 h-12 object-contain"
+                onError={(e) => {
+                  const target = e.target as HTMLImageElement
+                  target.src = '/placeholder-item.png'
+                }}
+              />
+            ) : (
+              <Flame className="w-6 h-6 text-gray-400" />
+            )}
+          </div>
+          <span className="text-gray-400 text-xs mt-1">Cape</span>
+        </div>
+
+        {/* Empty space */}
+        <div></div>
+
+        {/* Weapon */}
+        <div className="flex flex-col items-center">
+          <div 
+            className="w-16 h-16 border-2 border-gray-600 rounded-lg flex items-center justify-center cursor-pointer hover:border-[#F3B22D] transition-colors"
+            onClick={() => openItemModal('equipment', 'weapon')}
+          >
+            {equipment.weapon ? (
+              <Image 
+                src={`https://render.albiononline.com/v1/item/${equipment.weapon.id}`} 
+                alt={equipment.weapon.name} 
+                width={48} 
+                height={48} 
+                className="w-12 h-12 object-contain"
+                onError={(e) => {
+                  const target = e.target as HTMLImageElement
+                  target.src = '/placeholder-item.png'
+                }}
+              />
+            ) : (
+              <Sword className="w-6 h-6 text-gray-400" />
+            )}
+          </div>
+          <span className="text-gray-400 text-xs mt-1">Weapon</span>
+        </div>
+
+        {/* Chest */}
+        <div className="flex flex-col items-center">
+          <div 
+            className="w-16 h-16 border-2 border-gray-600 rounded-lg flex items-center justify-center cursor-pointer hover:border-[#F3B22D] transition-colors"
+            onClick={() => openItemModal('equipment', 'chest')}
+          >
+            {equipment.chest ? (
+              <Image 
+                src={`https://render.albiononline.com/v1/item/${equipment.chest.id}`} 
+                alt={equipment.chest.name} 
+                width={48} 
+                height={48} 
+                className="w-12 h-12 object-contain"
+                onError={(e) => {
+                  const target = e.target as HTMLImageElement
+                  target.src = '/placeholder-item.png'
+                }}
+              />
+            ) : (
+              <Package className="w-6 h-6 text-gray-400" />
+            )}
+          </div>
+          <span className="text-gray-400 text-xs mt-1">Chest</span>
+        </div>
+
+        {/* Offhand */}
+        <div className="flex flex-col items-center">
+          <div 
+            className="w-16 h-16 border-2 border-gray-600 rounded-lg flex items-center justify-center cursor-pointer hover:border-[#F3B22D] transition-colors"
+            onClick={() => openItemModal('equipment', 'offhand')}
+          >
+            {equipment.offhand ? (
+              <Image 
+                src={`https://render.albiononline.com/v1/item/${equipment.offhand.id}`} 
+                alt={equipment.offhand.name} 
+                width={48} 
+                height={48} 
+                className="w-12 h-12 object-contain"
+                onError={(e) => {
+                  const target = e.target as HTMLImageElement
+                  target.src = '/placeholder-item.png'
+                }}
+              />
+            ) : (
+              <Shield className="w-6 h-6 text-gray-400" />
+            )}
+          </div>
+          <span className="text-gray-400 text-xs mt-1">Offhand</span>
+        </div>
+
+        {/* Empty space */}
+        <div></div>
+
+        {/* Boots */}
+        <div className="flex flex-col items-center">
+          <div 
+            className="w-16 h-16 border-2 border-gray-600 rounded-lg flex items-center justify-center cursor-pointer hover:border-[#F3B22D] transition-colors"
+            onClick={() => openItemModal('equipment', 'boots')}
+          >
+            {equipment.boots ? (
+              <Image 
+                src={`https://render.albiononline.com/v1/item/${equipment.boots.id}`} 
+                alt={equipment.boots.name} 
+                width={48} 
+                height={48} 
+                className="w-12 h-12 object-contain"
+                onError={(e) => {
+                  const target = e.target as HTMLImageElement
+                  target.src = '/placeholder-item.png'
+                }}
+              />
+            ) : (
+              <Snowflake className="w-6 h-6 text-gray-400" />
+            )}
+          </div>
+          <span className="text-gray-400 text-xs mt-1">Boots</span>
+        </div>
+
+        {/* Empty space */}
+        <div></div>
+      </div>
+
+      {/* Consumables */}
+      <div className="mt-6">
+        <h4 className="text-white font-medium mb-3">Consumables</h4>
+        <div className="flex space-x-4">
+          <div className="flex flex-col items-center">
+            <div 
+              className="w-12 h-12 border-2 border-gray-600 rounded-lg flex items-center justify-center cursor-pointer hover:border-[#F3B22D] transition-colors"
+              onClick={() => openItemModal('consumables', 'potion')}
+            >
+              {consumables.potion ? (
+                <Image 
+                  src={`https://render.albiononline.com/v1/item/${consumables.potion.id}`} 
+                  alt={consumables.potion.name} 
+                  width={32} 
+                  height={32} 
+                  className="w-8 h-8 object-contain"
+                  onError={(e) => {
+                    const target = e.target as HTMLImageElement
+                    target.src = '/placeholder-item.png'
+                  }}
+                />
+              ) : (
+                <Droplets className="w-4 h-4 text-gray-400" />
+              )}
+            </div>
+            <span className="text-gray-400 text-xs mt-1">Potion</span>
+          </div>
+
+          <div className="flex flex-col items-center">
+            <div 
+              className="w-12 h-12 border-2 border-gray-600 rounded-lg flex items-center justify-center cursor-pointer hover:border-[#F3B22D] transition-colors"
+              onClick={() => openItemModal('consumables', 'food')}
+            >
+              {consumables.food ? (
+                <Image 
+                  src={`https://render.albiononline.com/v1/item/${consumables.food.id}`} 
+                  alt={consumables.food.name} 
+                  width={32} 
+                  height={32} 
+                  className="w-8 h-8 object-contain"
+                  onError={(e) => {
+                    const target = e.target as HTMLImageElement
+                    target.src = '/placeholder-item.png'
+                  }}
+                />
+              ) : (
+                <Apple className="w-4 h-4 text-gray-400" />
+              )}
+            </div>
+            <span className="text-gray-400 text-xs mt-1">Food</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
 
   // Build oluştur
   const createBuild = async () => {
@@ -411,30 +627,7 @@ export default function CreateBuildPage() {
             </Card>
 
             {/* Equipment Section */}
-            <Card className="bg-gray-800 border-gray-700">
-              <CardHeader>
-                <CardTitle className="text-white flex items-center space-x-2">
-                  <Package className="w-5 h-5" />
-                  <span>Equipment</span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {Object.entries(EQUIPMENT_SLOTS).map(([key, label]) => (
-                  <div key={key} className="flex items-center space-x-3">
-                    {getEquipmentIcon(key)}
-                    <span className="text-gray-300 text-sm flex-1">{label}</span>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="border-gray-600 text-gray-300 hover:bg-gray-700"
-                      onClick={() => openItemModal('equipment', key)}
-                    >
-                      {equipment[key] ? equipment[key]?.name : 'Select Item'}
-                    </Button>
-                  </div>
-                ))}
-              </CardContent>
-            </Card>
+            <CharacterInventoryView />
 
             {/* Consumables Section */}
             <Card className="bg-gray-800 border-gray-700">
@@ -508,15 +701,13 @@ export default function CreateBuildPage() {
         </div>
       </div>
 
-      {/* Item Search Modal */}
+      {/* Search Modal */}
       <SearchModal
         isOpen={showItemModal}
-        onClose={() => {
-          setShowItemModal(false)
-          setCurrentSelection(null)
-        }}
+        onClose={() => setShowItemModal(false)}
         onItemSelect={handleItemSelect}
-        placeholder="Item ara..."
+        placeholder={`${currentSelection?.type === 'equipment' ? 'Equipment' : 'Consumable'} ara...`}
+        categoryFilter={currentSelection?.type === 'equipment' ? getSlotCategory(currentSelection.slot) : undefined}
       />
 
       {/* Spell Search Modal */}
