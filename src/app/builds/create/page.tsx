@@ -61,8 +61,22 @@ const getSlotCategory = (slot: string) => {
     case 'helmet': case 'helmetOption': return 'armor'
     case 'chest': case 'chestOption': return 'armor'
     case 'boots': case 'bootsOption': return 'armor'
-    case 'cape': case 'capeOption': return 'accessories'
+    case 'cape': case 'capeOption': return 'capes'
+    case 'potion': case 'potionOption': return 'consumables'
+    case 'food': case 'foodOption': return 'consumables'
     default: return 'weapons'
+  }
+}
+
+// Get specific subcategory for better filtering
+const getSlotSubcategory = (slot: string) => {
+  switch (slot) {
+    case 'helmet': case 'helmetOption': return 'head'
+    case 'chest': case 'chestOption': return 'body'
+    case 'boots': case 'bootsOption': return 'feet'
+    case 'potion': case 'potionOption': return 'potion'
+    case 'food': case 'foodOption': return 'food'
+    default: return null
   }
 }
 
@@ -192,31 +206,6 @@ export default function CreateBuildPage() {
     <div className="bg-black-800 border border-gray-600 rounded-lg p-6">
       <h3 className="text-white font-bold text-lg mb-4">Character Inventory</h3>
       <div className="grid grid-cols-3 gap-4">
-        {/* Helmet */}
-        <div className="flex flex-col items-center">
-          <div 
-            className="w-16 h-16 border-2 border-gray-600 rounded-lg flex items-center justify-center cursor-pointer hover:border-[#F3B22D] transition-colors"
-            onClick={() => openItemModal('equipment', 'helmet')}
-          >
-            {equipment.helmet ? (
-              <Image 
-                src={`https://render.albiononline.com/v1/item/${equipment.helmet.id}`} 
-                alt={equipment.helmet.name} 
-                width={48} 
-                height={48} 
-                className="w-12 h-12 object-contain"
-                onError={(e) => {
-                  const target = e.target as HTMLImageElement
-                  target.src = '/placeholder-item.png'
-                }}
-              />
-            ) : (
-              <Heart className="w-6 h-6 text-gray-400" />
-            )}
-          </div>
-          <span className="text-gray-400 text-xs mt-1">Helmet</span>
-        </div>
-
         {/* Cape */}
         <div className="flex flex-col items-center">
           <div 
@@ -240,6 +229,31 @@ export default function CreateBuildPage() {
             )}
           </div>
           <span className="text-gray-400 text-xs mt-1">Cape</span>
+        </div>
+
+        {/* Helmet */}
+        <div className="flex flex-col items-center">
+          <div 
+            className="w-16 h-16 border-2 border-gray-600 rounded-lg flex items-center justify-center cursor-pointer hover:border-[#F3B22D] transition-colors"
+            onClick={() => openItemModal('equipment', 'helmet')}
+          >
+            {equipment.helmet ? (
+              <Image 
+                src={`https://render.albiononline.com/v1/item/${equipment.helmet.id}`} 
+                alt={equipment.helmet.name} 
+                width={48} 
+                height={48} 
+                className="w-12 h-12 object-contain"
+                onError={(e) => {
+                  const target = e.target as HTMLImageElement
+                  target.src = '/placeholder-item.png'
+                }}
+              />
+            ) : (
+              <Heart className="w-6 h-6 text-gray-400" />
+            )}
+          </div>
+          <span className="text-gray-400 text-xs mt-1">Helmet</span>
         </div>
 
         {/* Empty space */}
@@ -707,7 +721,8 @@ export default function CreateBuildPage() {
         onClose={() => setShowItemModal(false)}
         onItemSelect={handleItemSelect}
         placeholder={`${currentSelection?.type === 'equipment' ? 'Equipment' : 'Consumable'} ara...`}
-        categoryFilter={currentSelection?.type === 'equipment' ? getSlotCategory(currentSelection.slot) : undefined}
+        categoryFilter={currentSelection ? getSlotCategory(currentSelection.slot) : undefined}
+        subcategoryFilter={currentSelection ? getSlotSubcategory(currentSelection.slot) || undefined : undefined}
       />
 
       {/* Spell Search Modal */}

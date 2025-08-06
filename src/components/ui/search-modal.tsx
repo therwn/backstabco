@@ -12,6 +12,7 @@ interface SearchModalProps {
   onItemSelect: (item: AlbionItem) => void
   placeholder?: string
   categoryFilter?: string // Add category filter prop
+  subcategoryFilter?: string // Add subcategory filter prop
 }
 
 export function SearchModal({ 
@@ -19,7 +20,8 @@ export function SearchModal({
   onClose, 
   onItemSelect, 
   placeholder = "Item ara...",
-  categoryFilter // Add category filter parameter
+  categoryFilter, // Add category filter parameter
+  subcategoryFilter // Add subcategory filter parameter
 }: SearchModalProps) {
   const [query, setQuery] = useState('')
   const [items, setItems] = useState<AlbionItem[]>([])
@@ -40,13 +42,20 @@ export function SearchModal({
         setIsLoading(true)
         try {
           const results = await searchItems(query)
-          // Filter by category if provided
+          // Filter by category and subcategory if provided
           let filteredResults = results
           if (categoryFilter) {
-            filteredResults = results.filter(item => 
-              item.category === categoryFilter || 
-              item.subcategory === categoryFilter
-            )
+            filteredResults = results.filter(item => {
+              const categoryMatch = item.category === categoryFilter
+              const subcategoryMatch = item.subcategory === categoryFilter
+              
+              // If subcategoryFilter is provided, also check subcategory
+              if (subcategoryFilter) {
+                return (categoryMatch || subcategoryMatch) && item.subcategory === subcategoryFilter
+              }
+              
+              return categoryMatch || subcategoryMatch
+            })
           }
           setItems(filteredResults.slice(0, 10))
           setSelectedIndex(-1)
@@ -62,7 +71,7 @@ export function SearchModal({
     }, 300)
 
     return () => clearTimeout(timeoutId)
-  }, [query, categoryFilter])
+  }, [query, categoryFilter, subcategoryFilter])
 
   // Keyboard navigation
   useEffect(() => {
