@@ -31,9 +31,51 @@ export function SearchModal({
   const modalRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
+  // Get appropriate placeholder text
+  const getPlaceholderText = () => {
+    if (placeholder !== "Item ara...") return placeholder
+    if (categoryFilter) {
+      return `Ara veya önerilerden seç...`
+    }
+    return "Item ara..."
+  }
+
   useEffect(() => {
     setMounted(true)
   }, [])
+
+  // Show initial suggestions when modal opens
+  useEffect(() => {
+    if (isOpen && categoryFilter) {
+      setIsLoading(true)
+      // Show initial suggestions based on category filter
+      searchItems('').then(results => {
+        let filteredResults = results
+        if (categoryFilter) {
+          filteredResults = results.filter(item => {
+            const categoryMatch = item.category === categoryFilter
+            const subcategoryMatch = item.subcategory === categoryFilter
+            
+            // If subcategoryFilter is provided, also check subcategory
+            if (subcategoryFilter) {
+              return (categoryMatch || subcategoryMatch) && item.subcategory === subcategoryFilter
+            }
+            
+            return categoryMatch || subcategoryMatch
+          })
+        }
+        setItems(filteredResults.slice(0, 10))
+        setSelectedIndex(-1)
+        setIsLoading(false)
+      }).catch(error => {
+        console.error('Initial search error:', error)
+        setItems([])
+        setIsLoading(false)
+      })
+    } else if (isOpen) {
+      setItems([])
+    }
+  }, [isOpen, categoryFilter, subcategoryFilter])
 
   // Debounced search
   useEffect(() => {
@@ -61,6 +103,32 @@ export function SearchModal({
           setSelectedIndex(-1)
         } catch (error) {
           console.error('Search error:', error)
+          setItems([])
+        } finally {
+          setIsLoading(false)
+        }
+      } else if (query.trim().length === 0 && categoryFilter) {
+        // If query is empty but we have a category filter, show initial suggestions
+        setIsLoading(true)
+        try {
+          const results = await searchItems('')
+          let filteredResults = results
+          if (categoryFilter) {
+            filteredResults = results.filter(item => {
+              const categoryMatch = item.category === categoryFilter
+              const subcategoryMatch = item.subcategory === categoryFilter
+              
+              if (subcategoryFilter) {
+                return (categoryMatch || subcategoryMatch) && item.subcategory === subcategoryFilter
+              }
+              
+              return categoryMatch || subcategoryMatch
+            })
+          }
+          setItems(filteredResults.slice(0, 10))
+          setSelectedIndex(-1)
+        } catch (error) {
+          console.error('Initial search error:', error)
           setItems([])
         } finally {
           setIsLoading(false)
@@ -166,7 +234,7 @@ export function SearchModal({
               type="text"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder={placeholder}
+              placeholder={getPlaceholderText()}
               className="w-full bg-black-700 border border-black-600 rounded-lg pl-10 pr-4 py-3 text-white placeholder-gray-400 outline-none focus:border-blue-500 transition-colors"
             />
             {isLoading && (
@@ -211,9 +279,9 @@ export function SearchModal({
             <div className="text-center py-8 text-gray-400">
               Sonuç bulunamadı
             </div>
-          ) : query.length < 2 ? (
+          ) : query.length < 2 && !isLoading ? (
             <div className="text-center py-8 text-gray-400">
-              Arama yapmak için en az 2 karakter yazın
+              {categoryFilter ? 'Arama yapmak için yazın veya yukarıdaki önerilerden seçin' : 'Arama yapmak için en az 2 karakter yazın'}
             </div>
           ) : null}
         </div>
