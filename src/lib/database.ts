@@ -64,6 +64,18 @@ export async function createBuild(buildData: CreateBuildData, creatorId: string)
   try {
     console.log('Creating build with data:', buildData)
     
+    // First, let's check the table structure
+    const { data: tableInfo, error: tableError } = await supabase
+      .from('builds')
+      .select('*')
+      .limit(0)
+    
+    if (tableError) {
+      console.error('Error checking table structure:', tableError)
+    } else {
+      console.log('Table structure check successful')
+    }
+    
     const creatorName = await getDiscordUsername(creatorId)
     if (!creatorName) {
       console.error('Failed to get creator name for ID:', creatorId)

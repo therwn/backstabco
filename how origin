@@ -1,0 +1,5 @@
+[33mea78dfc[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m Fix spell API and add weapon type filtering
+[33m7099274[m Add real Albion spell API integration
+[33m44180fa[m Add Item and Spell Search Modals to Build Creator
+[33m357f992[m Complete build system overhaul with real Albion Online structure
+[33mee07519[m Add build creator and detail pages with skill templates
