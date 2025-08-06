@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -207,29 +207,13 @@ export default function TableViewPage() {
   const [searchResults, setSearchResults] = useState<AlbionItem[]>([])
   const [isSearching, setIsSearching] = useState(false)
 
-  // Session kontrolü
-  useEffect(() => {
-    if (status === 'loading') {
-      return
-    }
-
-    if (status === 'unauthenticated') {
-      router.push('/auth')
-      return
-    }
-
-    if (status === 'authenticated' && params.id) {
-      fetchTableDetails(params.id as string)
-    }
-  }, [status, params.id, router])
-
   // Show custom alert
-  const showAlert = (message: string, type: 'success' | 'error' | 'info') => {
+  const showAlert = useCallback((message: string, type: 'success' | 'error' | 'info') => {
     setAlert({ message, type })
     setTimeout(() => setAlert(null), 5000)
-  }
+  }, [])
 
-  const fetchTableDetails = async (tableId: string) => {
+  const fetchTableDetails = useCallback(async (tableId: string) => {
     try {
       // Debug için log'lar ekle
       if (process.env.NODE_ENV === 'development') {
@@ -291,7 +275,23 @@ export default function TableViewPage() {
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [router, showAlert])
+
+  // Session kontrolü
+  useEffect(() => {
+    if (status === 'loading') {
+      return
+    }
+
+    if (status === 'unauthenticated') {
+      router.push('/auth')
+      return
+    }
+
+    if (status === 'authenticated' && params.id) {
+      fetchTableDetails(params.id as string)
+    }
+  }, [status, params.id, router, fetchTableDetails])
 
   const checkPassword = () => {
     // Debug için log'lar ekle
