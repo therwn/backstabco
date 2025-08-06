@@ -1,8 +1,9 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useSession } from 'next-auth/react'
+import { useSession, signOut } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
+import { motion } from 'framer-motion'
 import { BUILD_CATEGORIES, EQUIPMENT_SLOTS, SPELL_SLOTS, CONSUMABLE_TYPES, AlbionSpell } from '@/types/albion'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -11,11 +12,12 @@ import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { ArrowLeft, Plus, Trash2, Save, Zap, Sword, Shield, Heart, Flame, Snowflake, Eye, Edit, X, Tag, Package, Droplets, Apple } from 'lucide-react'
+import { ArrowLeft, Plus, Trash2, Save, Zap, Sword, Shield, Heart, Flame, Snowflake, Eye, Edit, X, Tag, Package, Droplets, Apple, LogOut, User } from 'lucide-react'
 import { SearchModal } from '@/components/ui/search-modal'
 import { SpellSearchModal } from '@/components/ui/spell-search-modal'
 import { AlbionItem } from '@/lib/albion-api'
 import Image from 'next/image'
+import Logo from '@/assets/logo.svg'
 
 // Equipment slot icons
 const getEquipmentIcon = (slot: string) => {
@@ -467,9 +469,13 @@ export default function CreateBuildPage() {
     }
   }
 
+  const handleSignOut = async () => {
+    await signOut({ callbackUrl: '/auth' })
+  }
+
   if (status === 'loading') {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black text-white">
+      <div className="min-h-screen bg-gradient-to-br from-black-900 via-black-800 to-black-900 relative overflow-hidden">
         <div className="container mx-auto px-4 py-8">
           <div className="flex items-center justify-between mb-8">
             <Skeleton className="h-8 w-48" />
@@ -486,38 +492,100 @@ export default function CreateBuildPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black text-white">
-      <div className="container mx-auto px-4 py-8">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-8">
+    <div className="min-h-screen bg-gradient-to-br from-black-900 via-black-800 to-black-900 relative overflow-hidden">
+      {/* Animated Background Lines */}
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="lines">
+          <div className="line"></div>
+          <div className="line"></div>
+          <div className="line"></div>
+          <div className="line"></div>
+          <div className="line"></div>
+          <div className="line"></div>
+        </div>
+      </div>
+
+      {/* Header */}
+      <div className="max-w-[1240px] mx-auto px-6 relative z-10">
+        <motion.div 
+          className="flex items-center justify-between py-6"
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+        >
           <div className="flex items-center space-x-4">
+            <Image 
+              src={Logo} 
+              alt="BACKSTAB.CO Logo" 
+              width={40} 
+              height={40}
+            />
+            <h1 className="text-3xl font-bold text-white">Create Build</h1>
+          </div>
+          
+          {/* Profile & Logout */}
+          <div className="flex items-center space-x-3">
+            <div className="flex items-center space-x-2">
+              <User className="w-4 h-4 text-white" />
+              <span className="text-white font-medium">{session?.user?.name || 'Kullanıcı'}</span>
+            </div>
+            
             <Button
               variant="ghost"
-              onClick={() => router.push('/builds')}
-              className="text-gray-400 hover:text-white"
+              size="sm"
+              className="text-red-400 hover:bg-red-400 hover:text-white p-2"
+              onClick={handleSignOut}
             >
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Back to Builds
+              <LogOut className="w-4 h-4" />
             </Button>
+          </div>
+        </motion.div>
+      </div>
+
+      {/* Main Content */}
+      <div className="max-w-[1240px] mx-auto px-6 py-8 relative z-10">
+        <div className="space-y-8">
+          
+          {/* Navigation */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.1 }}
+          >
+            <Button 
+              variant="ghost"
+              onClick={() => router.push('/builds')}
+              className="text-gray-400 hover:text-white mb-4"
+            >
+              ← Builds'e Dön
+            </Button>
+          </motion.div>
+
+          {/* Header */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.2 }}
+            className="flex items-center justify-between"
+          >
             <div>
-              <h1 className="text-3xl font-bold bg-gradient-to-r from-yellow-400 to-orange-500 bg-clip-text text-transparent">
+              <h2 className="text-2xl font-bold text-white">
                 Create New Build
-              </h1>
+              </h2>
               <p className="text-gray-400 mt-2">
                 Design your perfect Albion Online build
               </p>
             </div>
-          </div>
-          
-          <Button 
-            onClick={createBuild}
-            disabled={loading}
-            className="bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white border-0"
-          >
-            <Save className="w-4 h-4 mr-2" />
-            {loading ? 'Creating...' : 'Create Build'}
-          </Button>
-        </div>
+            
+            <Button 
+              onClick={createBuild}
+              disabled={loading}
+              className="bg-[#F3B22D] hover:bg-[#E5A41A] text-black border-0"
+            >
+              <Save className="w-4 h-4 mr-2" />
+              {loading ? 'Creating...' : 'Create Build'}
+            </Button>
+          </motion.div>
 
         {/* Alerts */}
         {error && (

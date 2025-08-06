@@ -1,15 +1,18 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useSession } from 'next-auth/react'
+import { useSession, signOut } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
+import { motion } from 'framer-motion'
 import { Build, BUILD_CATEGORIES } from '@/types/albion'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Skeleton } from '@/components/ui/skeleton'
-import { Plus, Search, Filter, Eye, Edit, Trash2, Sword, Shield, Zap, Heart, Flame, Snowflake, Tag, Package, Droplets, Apple } from 'lucide-react'
+import { Plus, Search, Filter, Eye, Edit, Trash2, Sword, Shield, Zap, Heart, Flame, Snowflake, Tag, Package, Droplets, Apple, LogOut, User } from 'lucide-react'
+import Logo from '@/assets/logo.svg'
+import Image from 'next/image'
 
 export default function BuildsPage() {
   const { data: session, status } = useSession()
@@ -86,6 +89,10 @@ export default function BuildsPage() {
     return 'bg-gray-500/10 text-gray-500 border-gray-500/20'
   }
 
+  const handleSignOut = async () => {
+    await signOut({ callbackUrl: '/auth' })
+  }
+
   if (status === 'loading') {
     return (
       <div className="min-h-screen bg-black-900 text-white">
@@ -106,193 +113,277 @@ export default function BuildsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-black-900 text-white">
-      <div className="container mx-auto px-4 py-8">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h1 className="text-3xl font-bold text-white">
-              Albion Builds
-            </h1>
-            <p className="text-gray-400 mt-2">
-              Discover and share powerful builds for Albion Online
-            </p>
-          </div>
-          
-          <Button 
-            onClick={() => router.push('/builds/create')}
-            className="bg-[#F3B22D] hover:bg-[#E5A41A] text-black border-0"
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            Create Build
-          </Button>
+    <div className="min-h-screen bg-gradient-to-br from-black-900 via-black-800 to-black-900 relative overflow-hidden">
+      {/* Animated Background Lines */}
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="lines">
+          <div className="line"></div>
+          <div className="line"></div>
+          <div className="line"></div>
+          <div className="line"></div>
+          <div className="line"></div>
+          <div className="line"></div>
         </div>
+      </div>
 
-        {/* Filters */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-            <Input
-              placeholder="Search builds..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 bg-black-800 border border-gray-600 text-white placeholder-gray-400 focus:border-[#F3B22D]"
+      {/* Header */}
+      <div className="max-w-[1240px] mx-auto px-6 relative z-10">
+        <motion.div 
+          className="flex items-center justify-between py-6"
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+        >
+          <div className="flex items-center space-x-4">
+            <Image 
+              src={Logo} 
+              alt="BACKSTAB.CO Logo" 
+              width={40} 
+              height={40}
             />
+            <h1 className="text-3xl font-bold text-white">Builds</h1>
           </div>
           
-          <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-            <SelectTrigger className="bg-black-800 border border-gray-600 text-white focus:border-[#F3B22D]">
-              <SelectValue placeholder="Category" />
-            </SelectTrigger>
-            <SelectContent className="bg-black-800 border border-gray-600">
-              <SelectItem value="all">All Categories</SelectItem>
-              {BUILD_CATEGORIES.map(category => (
-                <SelectItem key={category} value={category}>{category}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          
-          <Button
-            onClick={() => {
-              setSearchTerm('')
-              setCategoryFilter('all')
-            }}
-            variant="outline"
-            className="border border-gray-600 text-gray-300 hover:bg-black-800 hover:border-[#F3B22D]"
-          >
-            <Filter className="w-4 h-4 mr-2" />
-            Clear Filters
-          </Button>
-        </div>
-
-        {/* Builds Grid */}
-        {loading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[...Array(6)].map((_, i) => (
-              <Skeleton key={i} className="h-64 w-full" />
-            ))}
-          </div>
-        ) : filteredBuilds.length === 0 ? (
-          <div className="text-center py-12">
-            <div className="text-gray-400 text-lg mb-4">
-              {searchTerm || categoryFilter !== 'all'
-                ? 'No builds match your filters' 
-                : 'No builds found'
-              }
+          {/* Profile & Logout */}
+          <div className="flex items-center space-x-3">
+            <div className="flex items-center space-x-2">
+              <User className="w-4 h-4 text-white" />
+              <span className="text-white font-medium">{session?.user?.name || 'Kullanıcı'}</span>
             </div>
+            
             <Button
+              variant="ghost"
+              size="sm"
+              className="text-red-400 hover:bg-red-400 hover:text-white p-2"
+              onClick={handleSignOut}
+            >
+              <LogOut className="w-4 h-4" />
+            </Button>
+          </div>
+        </motion.div>
+      </div>
+
+      {/* Main Content */}
+      <div className="max-w-[1240px] mx-auto px-6 py-8 relative z-10">
+        <div className="space-y-8">
+          
+          {/* Navigation */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.1 }}
+          >
+            <Button 
+              variant="ghost"
+              onClick={() => router.push('/dashboard')}
+              className="text-gray-400 hover:text-white mb-4"
+            >
+              ← Dashboard'a Dön
+            </Button>
+          </motion.div>
+
+          {/* Header */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.2 }}
+            className="flex items-center justify-between"
+          >
+            <div>
+              <h2 className="text-2xl font-bold text-white">
+                Albion Builds
+              </h2>
+              <p className="text-gray-400 mt-2">
+                Discover and share powerful builds for Albion Online
+              </p>
+            </div>
+            
+            <Button 
               onClick={() => router.push('/builds/create')}
               className="bg-[#F3B22D] hover:bg-[#E5A41A] text-black border-0"
             >
               <Plus className="w-4 h-4 mr-2" />
-              Create First Build
+              Create Build
             </Button>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredBuilds.map((build) => (
-              <Card key={build.id} className="bg-black-800 border border-gray-600 hover:border-[#F3B22D] transition-colors">
-                <CardHeader className="pb-3">
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-center space-x-2">
-                      <Package className="w-4 h-4" />
-                      <CardTitle className="text-lg text-white">{build.title}</CardTitle>
-                    </div>
-                    <div className="flex space-x-1">
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => router.push(`/builds/${build.id}`)}
-                        className="text-gray-400 hover:text-white"
-                      >
-                        <Eye className="w-4 h-4" />
-                      </Button>
-                      {session?.user?.discordId === build.creator && (
-                        <>
+          </motion.div>
+
+          {/* Filters */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.3 }}
+            className="grid grid-cols-1 md:grid-cols-3 gap-4"
+          >
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+              <Input
+                placeholder="Search builds..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10 bg-black-800 border border-gray-600 text-white placeholder-gray-400 focus:border-[#F3B22D]"
+              />
+            </div>
+            
+            <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+              <SelectTrigger className="bg-black-800 border border-gray-600 text-white focus:border-[#F3B22D]">
+                <SelectValue placeholder="Category" />
+              </SelectTrigger>
+              <SelectContent className="bg-black-800 border border-gray-600">
+                <SelectItem value="all">All Categories</SelectItem>
+                {BUILD_CATEGORIES.map(category => (
+                  <SelectItem key={category} value={category}>{category}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            
+            <Button
+              onClick={() => {
+                setSearchTerm('')
+                setCategoryFilter('all')
+              }}
+              variant="outline"
+              className="border border-gray-600 text-gray-300 hover:bg-black-800 hover:border-[#F3B22D]"
+            >
+              <Filter className="w-4 h-4 mr-2" />
+              Clear Filters
+            </Button>
+          </motion.div>
+
+          {/* Builds Grid */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.4 }}
+          >
+            {loading ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {[...Array(6)].map((_, i) => (
+                  <Skeleton key={i} className="h-64 w-full" />
+                ))}
+              </div>
+            ) : filteredBuilds.length === 0 ? (
+              <div className="text-center py-12">
+                <div className="text-gray-400 text-lg mb-4">
+                  {searchTerm || categoryFilter !== 'all'
+                    ? 'No builds match your filters' 
+                    : 'No builds found'
+                  }
+                </div>
+                <Button
+                  onClick={() => router.push('/builds/create')}
+                  className="bg-[#F3B22D] hover:bg-[#E5A41A] text-black border-0"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Create First Build
+                </Button>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {filteredBuilds.map((build) => (
+                  <Card key={build.id} className="bg-black-800 border border-gray-600 hover:border-[#F3B22D] transition-colors">
+                    <CardHeader className="pb-3">
+                      <div className="flex items-start justify-between">
+                        <div className="flex items-center space-x-2">
+                          <Package className="w-4 h-4" />
+                          <CardTitle className="text-lg text-white">{build.title}</CardTitle>
+                        </div>
+                        <div className="flex space-x-1">
                           <Button
                             size="sm"
                             variant="ghost"
-                            onClick={() => router.push(`/builds/${build.id}/edit`)}
+                            onClick={() => router.push(`/builds/${build.id}`)}
                             className="text-gray-400 hover:text-white"
                           >
-                            <Edit className="w-4 h-4" />
+                            <Eye className="w-4 h-4" />
                           </Button>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => handleDeleteBuild(build.id)}
-                            className="text-red-400 hover:text-red-300"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                </CardHeader>
-                
-                <CardContent className="pt-0">
-                  {build.description && (
-                    <p className="text-gray-400 text-sm mb-4 line-clamp-2">
-                      {build.description}
-                    </p>
-                  )}
-                  
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <span className="text-gray-500 text-sm">Category:</span>
-                      <span className={`px-2 py-1 rounded-full text-xs border ${getCategoryColor(build.category)}`}>
-                        {build.category}
-                      </span>
-                    </div>
-                    
-                    {build.tags.length > 0 && (
-                      <div className="flex items-center justify-between">
-                        <span className="text-gray-500 text-sm">Tags:</span>
-                        <div className="flex flex-wrap gap-1">
-                          {build.tags.slice(0, 3).map(tag => (
-                            <span key={tag} className="bg-blue-500/20 text-blue-300 px-2 py-1 rounded-full text-xs">
-                              {tag}
-                            </span>
-                          ))}
-                          {build.tags.length > 3 && (
-                            <span className="text-gray-400 text-xs">+{build.tags.length - 3}</span>
+                          {session?.user?.discordId === build.creator && (
+                            <>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => router.push(`/builds/${build.id}/edit`)}
+                                className="text-gray-400 hover:text-white"
+                              >
+                                <Edit className="w-4 h-4" />
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => handleDeleteBuild(build.id)}
+                                className="text-red-400 hover:text-red-300"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </>
                           )}
                         </div>
                       </div>
-                    )}
+                    </CardHeader>
                     
-                    <div className="flex items-center justify-between">
-                      <span className="text-gray-500 text-sm">Equipment:</span>
-                      <span className="text-white text-sm">{Object.keys(build.equipment || {}).length}</span>
-                    </div>
-                    
-                    <div className="flex items-center justify-between">
-                      <span className="text-gray-500 text-sm">Spells:</span>
-                      <span className="text-white text-sm">
-                        {Object.values(build.spells || {}).reduce((total, category) => 
-                          total + Object.keys(category || {}).length, 0
+                    <CardContent className="pt-0">
+                      {build.description && (
+                        <p className="text-gray-400 text-sm mb-4 line-clamp-2">
+                          {build.description}
+                        </p>
+                      )}
+                      
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                          <span className="text-gray-500 text-sm">Category:</span>
+                          <span className={`px-2 py-1 rounded-full text-xs border ${getCategoryColor(build.category)}`}>
+                            {build.category}
+                          </span>
+                        </div>
+                        
+                        {build.tags.length > 0 && (
+                          <div className="flex items-center justify-between">
+                            <span className="text-gray-500 text-sm">Tags:</span>
+                            <div className="flex flex-wrap gap-1">
+                              {build.tags.slice(0, 3).map(tag => (
+                                <span key={tag} className="bg-blue-500/20 text-blue-300 px-2 py-1 rounded-full text-xs">
+                                  {tag}
+                                </span>
+                              ))}
+                              {build.tags.length > 3 && (
+                                <span className="text-gray-400 text-xs">+{build.tags.length - 3}</span>
+                              )}
+                            </div>
+                          </div>
                         )}
-                      </span>
-                    </div>
-                    
-                    <div className="flex items-center justify-between">
-                      <span className="text-gray-500 text-sm">Creator:</span>
-                      <span className="text-white text-sm">{build.creatorName}</span>
-                    </div>
-                    
-                    <div className="flex items-center justify-between">
-                      <span className="text-gray-500 text-sm">Created:</span>
-                      <span className="text-white text-sm">
-                        {new Date(build.createdAt).toLocaleDateString()}
-                      </span>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        )}
+                        
+                        <div className="flex items-center justify-between">
+                          <span className="text-gray-500 text-sm">Equipment:</span>
+                          <span className="text-white text-sm">{Object.keys(build.equipment || {}).length}</span>
+                        </div>
+                        
+                        <div className="flex items-center justify-between">
+                          <span className="text-gray-500 text-sm">Spells:</span>
+                          <span className="text-white text-sm">
+                            {Object.values(build.spells || {}).reduce((total, category) => 
+                              total + Object.keys(category || {}).length, 0
+                            )}
+                          </span>
+                        </div>
+                        
+                        <div className="flex items-center justify-between">
+                          <span className="text-gray-500 text-sm">Creator:</span>
+                          <span className="text-white text-sm">{build.creatorName}</span>
+                        </div>
+                        
+                        <div className="flex items-center justify-between">
+                          <span className="text-gray-500 text-sm">Created:</span>
+                          <span className="text-white text-sm">
+                            {new Date(build.createdAt).toLocaleDateString()}
+                          </span>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </motion.div>
+        </div>
       </div>
     </div>
   )
@@ -314,4 +405,4 @@ export default function BuildsPage() {
       console.error('Error deleting build:', error)
     }
   }
-} 
+}
