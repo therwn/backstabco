@@ -70,6 +70,9 @@ export function clearItemCache() {
   localItemsCache = null
 }
 
+// Module yüklendiğinde cache'i temizle (yeni kurallar için)
+clearItemCache()
+
 // Items.txt dosyasını parse et
 async function parseItemsFile(): Promise<AlbionItem[]> {
   if (localItemsCache) {
@@ -517,7 +520,7 @@ function extractCategory(itemId: string): string {
   if (itemId.includes('_ARMOR') || itemId.includes('_HEAD_') || itemId.includes('_BODY_') || itemId.includes('_LEGS_') || itemId.includes('_FEET_') || itemId.includes('_HAND_') || itemId.includes('_SHOULDER_')) return ITEM_CATEGORIES.ARMOR
   if (itemId.includes('_WEAPON') || itemId.includes('_SWORD') || itemId.includes('_BOW') || itemId.includes('_STAFF') || itemId.includes('_MACE') || itemId.includes('_AXE') || itemId.includes('_DAGGER') || itemId.includes('_SPEAR') || itemId.includes('_CROSSBOW') || itemId.includes('_FIRE_STAFF') || itemId.includes('_FROST_STAFF') || itemId.includes('_ARCANE_STAFF') || itemId.includes('_HOLY_STAFF') || itemId.includes('_NATURE_STAFF') || itemId.includes('_MAIN_') || itemId.includes('_2H_') || itemId.includes('_OFF_')) return ITEM_CATEGORIES.WEAPONS
   if (itemId.includes('_TOOL')) return ITEM_CATEGORIES.TOOLS
-  if (itemId.includes('_POTION') || itemId.includes('_FOOD') || itemId.includes('_COOKING') || itemId.includes('_ALCHEMY')) return ITEM_CATEGORIES.CONSUMABLES
+  if (itemId.includes('_POTION') || itemId.includes('_FOOD') || itemId.includes('_COOKING') || itemId.includes('_ALCHEMY') || itemId.includes('_MEAL_')) return ITEM_CATEGORIES.CONSUMABLES
   if (itemId.includes('_MATERIAL') || itemId.includes('_RESOURCE') || itemId.includes('_WOOD') || itemId.includes('_ORE') || itemId.includes('_FIBER') || itemId.includes('_HIDE') || itemId.includes('_STONEBLOCK') || itemId.includes('_PLANKS') || itemId.includes('_METALBAR') || itemId.includes('_CLOTH') || itemId.includes('_LEATHER') || itemId.includes('_BRICK') || itemId.includes('_CARROT') || itemId.includes('_BEAN') || itemId.includes('_WHEAT') || itemId.includes('_TURNIP') || itemId.includes('_CABBAGE') || itemId.includes('_POTATO') || itemId.includes('_CORN') || itemId.includes('_PUMPKIN') || itemId.includes('_AGARIC') || itemId.includes('_COMFREY') || itemId.includes('_BURDOCK') || itemId.includes('_TEASEL') || itemId.includes('_FOXGLOVE') || itemId.includes('_MULLEIN') || itemId.includes('_YARROW') || itemId.includes('_EGG') || itemId.includes('_MILK') || itemId.includes('_FISH_')) return ITEM_CATEGORIES.MATERIALS
   if (itemId.includes('_FURNITURE')) return ITEM_CATEGORIES.FURNITURE
   if (itemId.includes('_RING') || itemId.includes('_NECKLACE')) return ITEM_CATEGORIES.JEWELRY
@@ -538,6 +541,12 @@ function extractSubcategory(itemId: string): string {
   if (itemId.includes('_SHOULDER_')) return 'shoulder'
   if (itemId.includes('_MAIN_')) return 'main-hand'
   if (itemId.includes('_OFF_')) return 'off-hand'
+  
+  // Food subcategories
+  if (itemId.includes('_POTION')) return 'potion'
+  if (itemId.includes('_MEAL_')) return 'food'
+  if (itemId.includes('_FOOD')) return 'food'
+  if (itemId.includes('_COOKING')) return 'food'
   
   return 'general'
 }
