@@ -236,10 +236,12 @@ export default function TableViewPage() {
         console.log('Table View: fetchTableDetails called with tableId:', tableId)
       }
 
+      setIsLoading(true)
       const response = await fetch(`/api/tables/${tableId}`)
       
       if (process.env.NODE_ENV === 'development') {
         console.log('Table View: API response status:', response.status)
+        console.log('Table View: API response ok:', response.ok)
       }
       
       if (response.ok) {
@@ -247,27 +249,43 @@ export default function TableViewPage() {
         
         if (process.env.NODE_ENV === 'development') {
           console.log('Table View: Table data received:', data)
+          console.log('Table View: Table has password:', !!data.password)
         }
         
         setTable(data)
         setEditData(data)
         
-        // Sadece şifreli tablolar için şifre modal'ını göster
-        if (data.password && data.password.trim() !== '') {
-          setShowPasswordModal(true)
-        }
+        // Şifre kontrolünü geciktir - timing sorunu için
+        setTimeout(() => {
+          if (data.password && data.password.trim() !== '') {
+            if (process.env.NODE_ENV === 'development') {
+              console.log('Table View: Showing password modal')
+            }
+            setShowPasswordModal(true)
+          }
+        }, 1000) // 1 saniye gecikme
       } else {
-        const errorData = await response.json()
+        const errorData = await response.json().catch(() => ({}))
         
         if (process.env.NODE_ENV === 'development') {
           console.log('Table View: API error response:', errorData)
+          console.log('Table View: Response status:', response.status)
         }
         
-        showAlert('Tablo bulunamadı!', 'error')
+        if (response.status === 404) {
+          showAlert('Tablo bulunamadı!', 'error')
+        } else if (response.status === 500) {
+          showAlert('Sunucu hatası!', 'error')
+        } else {
+          showAlert('Tablo yüklenirken hata oluştu!', 'error')
+        }
         router.push('/dashboard')
       }
     } catch (error) {
       console.error('Tablo detayları getirilirken hata:', error)
+      if (process.env.NODE_ENV === 'development') {
+        console.log('Table View: Network error:', error)
+      }
       showAlert('Tablo detayları yüklenirken hata oluştu!', 'error')
       router.push('/dashboard')
     } finally {
