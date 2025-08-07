@@ -196,7 +196,7 @@ export interface Build {
   tags: string[]
   description: string | null
   equipment: AlbionEquipment
-  consumables?: AlbionConsumables
+  consumables: AlbionConsumables
   spells: AlbionSpells
   creator: string
   creatorName: string
