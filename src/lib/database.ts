@@ -5,11 +5,6 @@ import { BlackMarketTable, Build, CreateBuildData, UpdateBuildData } from '@/typ
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co'
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || 'placeholder-key'
 
-// Only throw error in production
-if (process.env.NODE_ENV === 'production' && (!supabaseUrl || !supabaseServiceKey)) {
-  throw new Error('Missing Supabase environment variables')
-}
-
 const supabase = createClient(supabaseUrl, supabaseServiceKey, {
   auth: {
     autoRefreshToken: false,
@@ -65,16 +60,10 @@ export async function createBuild(buildData: CreateBuildData, creatorId: string)
   try {
     console.log('Creating build with data:', buildData)
     
-    // First, let's check the table structure
-    const { data: tableInfo, error: tableError } = await supabase
-      .from('builds')
-      .select('*')
-      .limit(0)
-    
-    if (tableError) {
-      console.error('Error checking table structure:', tableError)
-    } else {
-      console.log('Table structure check successful')
+    // Check if we have valid Supabase connection
+    if (!supabaseUrl || supabaseUrl === 'https://placeholder.supabase.co') {
+      console.error('Invalid Supabase URL')
+      return null
     }
     
     const creatorName = await getDiscordUsername(creatorId)
