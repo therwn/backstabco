@@ -142,9 +142,10 @@ export interface AlbionSpell {
   uniqueName: string
   name: string
   description: string
-  slot: 'mainhand1' | 'mainhand2' | 'mainhand3' | 'offhand1' | 'offhand2' | 'head1' | 'head2' | 'armor1' | 'armor2' | 'shoes1' | 'shoes2'
+  slot: 'q' | 'w' | 'e' | 'd' | 'r' | 'f' | 'passive'
   category: 'weapon' | 'head' | 'armor' | 'shoes'
   type: 'active' | 'passive'
+  weaponType?: string
 }
 
 export interface AlbionEquipment {

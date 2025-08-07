@@ -2,10 +2,11 @@ import { createClient } from '@supabase/supabase-js'
 import { BlackMarketTable, Build, CreateBuildData, UpdateBuildData } from '@/types/albion'
 
 // Supabase client'ı oluştur
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co'
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || 'placeholder-key'
 
-if (!supabaseUrl || !supabaseServiceKey) {
+// Only throw error in production
+if (process.env.NODE_ENV === 'production' && (!supabaseUrl || !supabaseServiceKey)) {
   throw new Error('Missing Supabase environment variables')
 }
 

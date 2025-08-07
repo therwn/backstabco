@@ -20,6 +20,7 @@
     "@vercel/postgres": "^0.10.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "fast-xml-parser": "^5.2.5",
     "framer-motion": "^12.23.12",
     "lucide-react": "^0.536.0",
     "motion": "^12.23.12",
