@@ -58,20 +58,25 @@ async function getDiscordUsername(discordId: string): Promise<string> {
 // Build functions - Updated for new structure
 export async function createBuild(buildData: CreateBuildData, creatorId: string): Promise<Build | null> {
   try {
-    console.log('Creating build with data:', buildData)
+    console.log('DB: createBuild called with creatorId:', creatorId)
+    console.log('DB: Supabase URL:', supabaseUrl)
+    console.log('DB: Supabase Key set:', !!supabaseServiceKey)
     
     // Check if we have valid Supabase connection
     if (!supabaseUrl || supabaseUrl === 'https://placeholder.supabase.co') {
-      console.error('Invalid Supabase URL')
+      console.error('DB: Invalid Supabase URL - using placeholder')
       return null
     }
     
+    console.log('DB: Getting Discord username...')
     const creatorName = await getDiscordUsername(creatorId)
     if (!creatorName) {
-      console.error('Failed to get creator name for ID:', creatorId)
+      console.error('DB: Failed to get creator name for ID:', creatorId)
       return null
     }
+    console.log('DB: Creator name:', creatorName)
 
+    console.log('DB: Inserting build into database...')
     const { data, error } = await supabase
       .from('builds')
       .insert({
@@ -89,10 +94,17 @@ export async function createBuild(buildData: CreateBuildData, creatorId: string)
       .single()
 
     if (error) {
-      console.error('Error creating build:', error)
+      console.error('DB: Supabase error creating build:', error)
+      console.error('DB: Error details:', {
+        code: error.code,
+        message: error.message,
+        details: error.details,
+        hint: error.hint
+      })
       return null
     }
 
+    console.log('DB: Build created successfully with ID:', data.id)
     return {
       id: data.id.toString(),
       title: data.title,
@@ -108,7 +120,8 @@ export async function createBuild(buildData: CreateBuildData, creatorId: string)
       updatedAt: new Date(data.updated_at)
     }
   } catch (error) {
-    console.error('Error in createBuild:', error)
+    console.error('DB: Unexpected error in createBuild:', error)
+    console.error('DB: Error stack:', error instanceof Error ? error.stack : 'No stack trace')
     return null
   }
 }

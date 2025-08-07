@@ -24,6 +24,12 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   try {
     console.log('API: POST /api/builds called')
+    
+    // Check environment variables
+    console.log('API: Environment check - NODE_ENV:', process.env.NODE_ENV)
+    console.log('API: Environment check - SUPABASE_URL:', process.env.NEXT_PUBLIC_SUPABASE_URL ? 'SET' : 'NOT SET')
+    console.log('API: Environment check - SUPABASE_KEY:', process.env.SUPABASE_SERVICE_ROLE_KEY ? 'SET' : 'NOT SET')
+    
     const session = await getServerSession(authOptions)
     if (!session?.user?.discordId) {
       console.log('API: Unauthorized - no session or discordId')
@@ -32,6 +38,8 @@ export async function POST(request: NextRequest) {
         { status: 401 }
       )
     }
+
+    console.log('API: User authenticated - discordId:', session.user.discordId)
 
     const body = await request.json()
     const buildData: CreateBuildData = {
@@ -61,11 +69,13 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    console.log('API: Calling createBuild function...')
     const newBuild = await createBuild(buildData, session.user.discordId)
+    
     if (!newBuild) {
-      console.error('API: Failed to create build')
+      console.error('API: createBuild returned null')
       return NextResponse.json(
-        { error: 'Failed to create build' },
+        { error: 'Failed to create build - database error' },
         { status: 500 }
       )
     }
@@ -74,6 +84,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(newBuild, { status: 201 })
   } catch (error) {
     console.error('API: Error creating build:', error)
+    console.error('API: Error stack:', error instanceof Error ? error.stack : 'No stack trace')
     return NextResponse.json(
       { error: 'Failed to create build' },
       { status: 500 }
