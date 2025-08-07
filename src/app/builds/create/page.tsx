@@ -840,9 +840,9 @@ export default function CreateBuildPage() {
                                <span className="text-gray-300 text-sm flex-1">{label}</span>
                                <div className="flex space-x-2">
                                  <Select
-                                   value={spells[category]?.[slot]?.uniqueName || ''}
+                                   value={spells[category]?.[slot]?.uniqueName || 'none'}
                                    onValueChange={(value) => {
-                                     if (value) {
+                                     if (value && value !== 'none') {
                                        const selectedSpell = slotSpells.find(spell => spell.uniqueName === value)
                                        if (selectedSpell) {
                                          updateSpell(category, slot, selectedSpell)
@@ -856,7 +856,7 @@ export default function CreateBuildPage() {
                                      <SelectValue placeholder="Select spell" />
                                    </SelectTrigger>
                                    <SelectContent className="bg-black-800 border border-gray-600 max-h-60">
-                                     <SelectItem value="">No spell</SelectItem>
+                                     <SelectItem value="none">No spell</SelectItem>
                                      {slotSpells.map((spell) => (
                                        <SelectItem key={spell.uniqueName} value={spell.uniqueName}>
                                          {spell.name}
