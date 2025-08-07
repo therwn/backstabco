@@ -353,15 +353,20 @@ export default function BuildsPage() {
                         
                         <div className="flex items-center justify-between">
                           <span className="text-gray-500 text-sm">Equipment:</span>
-                          <span className="text-white text-sm">{Object.keys(build.equipment || {}).length}</span>
+                          <span className="text-white text-sm">{build.equipment ? Object.keys(build.equipment).length : 0}</span>
+                        </div>
+                        
+                        <div className="flex items-center justify-between">
+                          <span className="text-gray-500 text-sm">Consumables:</span>
+                          <span className="text-white text-sm">{build.consumables ? Object.keys(build.consumables).length : 0}</span>
                         </div>
                         
                         <div className="flex items-center justify-between">
                           <span className="text-gray-500 text-sm">Spells:</span>
                           <span className="text-white text-sm">
-                            {Object.values(build.spells || {}).reduce((total, category) => 
-                              total + Object.keys(category || {}).length, 0
-                            )}
+                            {build.spells ? Object.values(build.spells).reduce((total, category) => 
+                              total + (category ? Object.keys(category).length : 0), 0
+                            ) : 0}
                           </span>
                         </div>
                         
