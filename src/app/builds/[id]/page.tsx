@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
-import { Build, BuildSkill } from '@/types/albion'
+import { Build } from '@/types/albion'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -83,45 +83,28 @@ export default function BuildDetailPage({ params }: { params: { id: string } }) 
     }
   }
 
-  // Weapon type icon'u
-  const getWeaponIcon = (weaponType: string) => {
-    if (weaponType.includes('Staff')) return <Zap className="w-4 h-4" />
-    if (weaponType.includes('Sword')) return <Sword className="w-4 h-4" />
-    if (weaponType.includes('Shield')) return <Shield className="w-4 h-4" />
-    if (weaponType.includes('Fire')) return <Flame className="w-4 h-4" />
-    if (weaponType.includes('Frost')) return <Snowflake className="w-4 h-4" />
-    return <Sword className="w-4 h-4" />
-  }
-
-  // Skill type icon'u
-  const getSkillIcon = (skillType: BuildSkill['skillType']) => {
-    switch (skillType) {
-      case 'Q': return <Zap className="w-4 h-4" />
-      case 'W': return <Shield className="w-4 h-4" />
-      case 'E': return <Sword className="w-4 h-4" />
-      case 'Passive': return <Heart className="w-4 h-4" />
-      case 'Consumable': return <Flame className="w-4 h-4" />
-      case 'Mount': return <Snowflake className="w-4 h-4" />
-      default: return <Zap className="w-4 h-4" />
+  // Equipment icon'u
+  const getEquipmentIcon = (slot: string) => {
+    switch (slot) {
+      case 'weapon': return <Sword className="w-4 h-4" />
+      case 'offhand': return <Shield className="w-4 h-4" />
+      case 'helmet': case 'helmetOption': return <Heart className="w-4 h-4" />
+      case 'chest': case 'chestOption': return <Flame className="w-4 h-4" />
+      case 'boots': case 'bootsOption': return <Snowflake className="w-4 h-4" />
+      case 'cape': case 'capeOption': return <Eye className="w-4 h-4" />
+      default: return <Flame className="w-4 h-4" />
     }
   }
 
-  // Content type badge rengi
-  const getContentTypeColor = (contentType: string) => {
-    if (contentType.includes('PvP')) return 'bg-red-500/10 text-red-500 border-red-500/20'
-    if (contentType.includes('PvE')) return 'bg-green-500/10 text-green-500 border-green-500/20'
-    if (contentType.includes('ZvZ')) return 'bg-purple-500/10 text-purple-500 border-purple-500/20'
+  // Category badge rengi
+  const getCategoryColor = (category: string) => {
+    if (category.includes('PvP')) return 'bg-red-500/10 text-red-500 border-red-500/20'
+    if (category.includes('PvE')) return 'bg-green-500/10 text-green-500 border-green-500/20'
+    if (category.includes('ZvZ')) return 'bg-purple-500/10 text-purple-500 border-purple-500/20'
+    if (category.includes('Dungeon')) return 'bg-blue-500/10 text-blue-500 border-blue-500/20'
+    if (category.includes('Arena')) return 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20'
     return 'bg-gray-500/10 text-gray-500 border-gray-500/20'
   }
-
-  // Skill'leri grupla
-  const groupedSkills = build?.skills.reduce((acc, skill) => {
-    if (!acc[skill.skillType]) {
-      acc[skill.skillType] = []
-    }
-    acc[skill.skillType].push(skill)
-    return acc
-  }, {} as Record<string, BuildSkill[]>) || {}
 
   if (status === 'loading' || loading) {
     return (
@@ -235,23 +218,29 @@ export default function BuildDetailPage({ params }: { params: { id: string } }) 
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-center justify-between">
-                <span className="text-gray-400">Weapon:</span>
-                <div className="flex items-center space-x-2">
-                  {getWeaponIcon(build.weaponType)}
-                  <span className="text-white font-medium">{build.weaponType}</span>
-                </div>
-              </div>
-              
-              <div className="flex items-center justify-between">
-                <span className="text-gray-400">Content:</span>
-                <span className={`px-2 py-1 rounded-full text-xs border ${getContentTypeColor(build.contentType)}`}>
-                  {build.contentType}
+                <span className="text-gray-400">Category:</span>
+                <span className={`px-2 py-1 rounded-full text-xs border ${getCategoryColor(build.category)}`}>
+                  {build.category}
                 </span>
               </div>
               
               <div className="flex items-center justify-between">
-                <span className="text-gray-400">Skills:</span>
-                <span className="text-white">{build.skills.length}</span>
+                <span className="text-gray-400">Equipment:</span>
+                <span className="text-white">{build.equipment ? Object.keys(build.equipment).length : 0}</span>
+              </div>
+              
+              <div className="flex items-center justify-between">
+                <span className="text-gray-400">Consumables:</span>
+                <span className="text-white">{build.consumables ? Object.keys(build.consumables).length : 0}</span>
+              </div>
+              
+              <div className="flex items-center justify-between">
+                <span className="text-gray-400">Spells:</span>
+                <span className="text-white">
+                  {build.spells ? Object.values(build.spells).reduce((total, category) => 
+                    total + (category ? Object.keys(category).length : 0), 0
+                  ) : 0}
+                </span>
               </div>
               
               <div className="flex items-center justify-between">
@@ -279,42 +268,66 @@ export default function BuildDetailPage({ params }: { params: { id: string } }) 
             </CardContent>
           </Card>
 
-          {/* Skills */}
+          {/* Equipment & Spells */}
           <div className="lg:col-span-2">
             <Card className="bg-gray-800 border-gray-700">
               <CardHeader>
-                <CardTitle className="text-white">Skills</CardTitle>
+                <CardTitle className="text-white">Equipment & Spells</CardTitle>
               </CardHeader>
               <CardContent>
-                {Object.keys(groupedSkills).length === 0 ? (
-                  <div className="text-center py-8 text-gray-400">
-                    <Zap className="w-12 h-12 mx-auto mb-4" />
-                    <p>No skills found</p>
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {Object.entries(groupedSkills).map(([skillType, skills]) => (
-                      <div key={skillType} className="space-y-3">
-                        <h3 className="text-lg font-semibold text-white flex items-center space-x-2">
-                          {getSkillIcon(skillType as BuildSkill['skillType'])}
-                          <span>{skillType}</span>
-                        </h3>
-                        
-                        {skills.map((skill, index) => (
-                          <div key={index} className="p-3 bg-gray-700 rounded-lg border border-gray-600">
-                            <div className="flex items-center justify-between mb-2">
-                              <span className="text-white font-medium">{skill.skillName}</span>
+                <div className="space-y-6">
+                  {/* Equipment */}
+                  {build.equipment && Object.keys(build.equipment).length > 0 && (
+                    <div>
+                      <h3 className="text-lg font-semibold text-white mb-3">Equipment</h3>
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                        {Object.entries(build.equipment).map(([slot, item]) => (
+                          <div key={slot} className="p-3 bg-gray-700 rounded-lg border border-gray-600">
+                            <div className="flex items-center space-x-2 mb-2">
+                              {getEquipmentIcon(slot)}
+                              <span className="text-gray-400 text-sm capitalize">{slot}</span>
                             </div>
-                            
-                            {skill.description && (
-                              <p className="text-gray-400 text-sm">{skill.description}</p>
+                            {item && (
+                              <div className="text-white text-sm font-medium">{item.name}</div>
                             )}
                           </div>
                         ))}
                       </div>
-                    ))}
-                  </div>
-                )}
+                    </div>
+                  )}
+
+                  {/* Spells */}
+                  {build.spells && Object.keys(build.spells).length > 0 && (
+                    <div>
+                      <h3 className="text-lg font-semibold text-white mb-3">Spells</h3>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {Object.entries(build.spells).map(([category, spells]) => (
+                          <div key={category} className="space-y-2">
+                            <h4 className="text-md font-medium text-white capitalize">{category}</h4>
+                            {spells && Object.entries(spells).map(([slot, spell]) => (
+                              <div key={slot} className="p-2 bg-gray-700 rounded border border-gray-600">
+                                <div className="flex items-center justify-between">
+                                  <span className="text-gray-400 text-sm capitalize">{slot}</span>
+                                  {spell && (
+                                    <span className="text-white text-sm">{spell.name}</span>
+                                  )}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {(!build.equipment || Object.keys(build.equipment).length === 0) && 
+                   (!build.spells || Object.keys(build.spells).length === 0) && (
+                    <div className="text-center py-8 text-gray-400">
+                      <Zap className="w-12 h-12 mx-auto mb-4" />
+                      <p>No equipment or spells found</p>
+                    </div>
+                  )}
+                </div>
               </CardContent>
             </Card>
           </div>
