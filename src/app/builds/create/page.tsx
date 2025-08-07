@@ -14,7 +14,6 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { ArrowLeft, Plus, Trash2, Save, Zap, Sword, Shield, Heart, Flame, Snowflake, Eye, Edit, X, Tag, Package, Droplets, Apple, LogOut, User } from 'lucide-react'
 import { SearchModal } from '@/components/ui/search-modal'
-import { SpellSearchModal } from '@/components/ui/spell-search-modal'
 import { AlbionItem } from '@/lib/albion-api'
 import Image from 'next/image'
 import Logo from '@/assets/logo.svg'
@@ -108,6 +107,7 @@ export default function CreateBuildPage() {
   const [showSpellModal, setShowSpellModal] = useState(false)
   const [currentSelection, setCurrentSelection] = useState<{ type: 'equipment' | 'consumables', slot: string } | null>(null)
   const [currentSpellSelection, setCurrentSpellSelection] = useState<{ category: string, slot: string, weaponType?: string } | null>(null)
+  const [availableSpells, setAvailableSpells] = useState<Record<string, AlbionSpell[]>>({})
 
   // Session kontrolü
   useEffect(() => {
@@ -163,6 +163,12 @@ export default function CreateBuildPage() {
           ...prev,
           [currentSelection.slot]: item
         }))
+        
+        // If weapon is selected, load spells for that weapon type
+        if (currentSelection.slot === 'weapon') {
+          const weaponType = getWeaponType(item)
+          loadSpellsForWeapon(weaponType)
+        }
       } else if (currentSelection.type === 'consumables') {
         setConsumables(prev => ({
           ...prev,
@@ -201,6 +207,41 @@ export default function CreateBuildPage() {
 
   const removeSpell = (category: string, slot: string) => {
     updateSpell(category, slot, undefined)
+  }
+
+  // Load spells for a specific weapon type
+  const loadSpellsForWeapon = async (weaponType: string) => {
+    try {
+      const response = await fetch(`/api/spells?weaponType=${weaponType}`)
+      if (response.ok) {
+        const spells = await response.json()
+        setAvailableSpells(prev => ({
+          ...prev,
+          [weaponType]: spells
+        }))
+      }
+    } catch (error) {
+      console.error('Error loading spells:', error)
+    }
+  }
+
+  // Get weapon type from item
+  const getWeaponType = (item: AlbionItem) => {
+    const itemId = item.id.toLowerCase()
+    if (itemId.includes('sword')) return 'sword'
+    if (itemId.includes('bow')) return 'bow'
+    if (itemId.includes('staff')) return 'staff'
+    if (itemId.includes('mace')) return 'mace'
+    if (itemId.includes('axe')) return 'axe'
+    if (itemId.includes('dagger')) return 'dagger'
+    if (itemId.includes('spear')) return 'spear'
+    if (itemId.includes('crossbow')) return 'crossbow'
+    if (itemId.includes('fire_staff')) return 'fire_staff'
+    if (itemId.includes('frost_staff')) return 'frost_staff'
+    if (itemId.includes('arcane_staff')) return 'arcane_staff'
+    if (itemId.includes('holy_staff')) return 'holy_staff'
+    if (itemId.includes('nature_staff')) return 'nature_staff'
+    return 'general'
   }
 
   // Character Inventory View Component
@@ -756,48 +797,98 @@ export default function CreateBuildPage() {
               </Card>
             </div>
 
-            {/* Spells Section */}
-            <Card className="bg-black-800 border border-gray-600">
-              <CardHeader>
-                <CardTitle className="text-white flex items-center space-x-2">
-                  <Zap className="w-5 h-5" />
-                  <span>Spells</span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                {Object.entries(SPELL_SLOTS).map(([category, slots]) => (
-                  <div key={category} className="space-y-3">
-                    <h3 className="text-lg font-semibold text-white capitalize">{category}</h3>
-                    {Object.entries(slots).map(([slot, label]) => (
-                      <div key={slot} className="flex items-center space-x-3">
-                        {getSpellIcon(slot)}
-                        <span className="text-gray-300 text-sm flex-1">{label}</span>
-                        <div className="flex space-x-2">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="border border-gray-600 text-gray-300 hover:bg-black-800 hover:border-[#F3B22D]"
-                            onClick={() => openSpellModal(category, slot)}
-                          >
-                            {spells[category]?.[slot] ? spells[category][slot]?.name : 'Select Spell'}
-                          </Button>
-                          {spells[category]?.[slot] && (
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="border-red-600 text-red-300 hover:bg-red-700"
-                              onClick={() => removeSpell(category, slot)}
-                            >
-                              <X className="w-4 h-4" />
-                            </Button>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ))}
-              </CardContent>
-            </Card>
+                         {/* Spells Section */}
+             <Card className="bg-black-800 border border-gray-600">
+               <CardHeader>
+                 <CardTitle className="text-white flex items-center space-x-2">
+                   <Zap className="w-5 h-5" />
+                   <span>Spells</span>
+                 </CardTitle>
+               </CardHeader>
+               <CardContent className="space-y-6">
+                 {equipment.weapon ? (
+                   <div className="space-y-4">
+                     <div className="p-4 bg-gray-800/50 rounded-lg border border-gray-600">
+                       <div className="text-gray-400 text-sm mb-2">Selected Weapon: {equipment.weapon.name}</div>
+                       <div className="text-white text-sm">
+                         Choose spells for your weapon. Spells will be filtered based on your weapon type.
+                       </div>
+                     </div>
+                     
+                     {Object.entries(SPELL_SLOTS).map(([category, slots]) => (
+                       <div key={category} className="space-y-3">
+                         <h3 className="text-lg font-semibold text-white capitalize">{category}</h3>
+                         {Object.entries(slots).map(([slot, label]) => {
+                           const weaponType = getWeaponType(equipment.weapon!)
+                           const weaponSpells = availableSpells[weaponType] || []
+                           // Map slot names to AlbionSpell slot format
+                           const slotMapping: Record<string, string> = {
+                             'q': 'mainhand1',
+                             'w': 'mainhand2', 
+                             'e': 'mainhand3',
+                             'd': 'head1',
+                             'r': 'armor1',
+                             'f': 'shoes1',
+                             'passive': 'passive'
+                           }
+                           const mappedSlot = slotMapping[slot] || slot
+                           const slotSpells = weaponSpells.filter(spell => spell.slot === mappedSlot)
+                           
+                           return (
+                             <div key={slot} className="flex items-center space-x-3">
+                               {getSpellIcon(slot)}
+                               <span className="text-gray-300 text-sm flex-1">{label}</span>
+                               <div className="flex space-x-2">
+                                 <Select
+                                   value={spells[category]?.[slot]?.uniqueName || ''}
+                                   onValueChange={(value) => {
+                                     if (value) {
+                                       const selectedSpell = slotSpells.find(spell => spell.uniqueName === value)
+                                       if (selectedSpell) {
+                                         updateSpell(category, slot, selectedSpell)
+                                       }
+                                     } else {
+                                       removeSpell(category, slot)
+                                     }
+                                   }}
+                                 >
+                                   <SelectTrigger className="w-48 bg-black-800 border border-gray-600 text-white focus:border-[#F3B22D]">
+                                     <SelectValue placeholder="Select spell" />
+                                   </SelectTrigger>
+                                   <SelectContent className="bg-black-800 border border-gray-600 max-h-60">
+                                     <SelectItem value="">No spell</SelectItem>
+                                     {slotSpells.map((spell) => (
+                                       <SelectItem key={spell.uniqueName} value={spell.uniqueName}>
+                                         {spell.name}
+                                       </SelectItem>
+                                     ))}
+                                   </SelectContent>
+                                 </Select>
+                                 {spells[category]?.[slot] && (
+                                   <Button
+                                     size="sm"
+                                     variant="outline"
+                                     className="border-red-600 text-red-300 hover:bg-red-700"
+                                     onClick={() => removeSpell(category, slot)}
+                                   >
+                                     <X className="w-4 h-4" />
+                                   </Button>
+                                 )}
+                               </div>
+                             </div>
+                           )
+                         })}
+                       </div>
+                     ))}
+                   </div>
+                 ) : (
+                   <div className="text-center py-8">
+                     <Zap className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                     <p className="text-gray-400">Select a weapon first to choose spells</p>
+                   </div>
+                 )}
+               </CardContent>
+             </Card>
           </motion.div>
         </div>
       </div>
@@ -812,18 +903,7 @@ export default function CreateBuildPage() {
         subcategoryFilter={currentSelection ? getSlotSubcategory(currentSelection.slot) || undefined : undefined}
       />
 
-      {/* Spell Search Modal */}
-      <SpellSearchModal
-        isOpen={showSpellModal}
-        onClose={() => {
-          setShowSpellModal(false)
-          setCurrentSpellSelection(null)
-        }}
-        onSpellSelect={handleSpellSelect}
-        placeholder="Spell ara..."
-        slot={currentSpellSelection?.slot}
-        weaponType={currentSpellSelection?.weaponType}
-      />
+
     </div>
   )
 }
