@@ -564,7 +564,7 @@ export default function TableViewPage() {
           router.push('/dashboard')
         }
       }}>
-        <DialogContent className="bg-black-800 border border-gray-600 backdrop-blur-sm">
+        <DialogContent className="bg-black-800 border border-gray-600 backdrop-blur-md bg-opacity-95">
           <DialogHeader>
             <div className="text-center mb-6">
               <Lock className="w-12 h-12 text-[#F3B22D] mx-auto mb-4" />
@@ -685,8 +685,11 @@ export default function TableViewPage() {
         </div>
       </div>
 
-      {/* Header */}
-      <div className="max-w-[1240px] mx-auto px-6 relative z-10">
+      {/* Main Content - Only show when password modal is closed */}
+      {!showPasswordModal && (
+        <>
+          {/* Header */}
+          <div className="max-w-[1240px] mx-auto px-6 relative z-10">
         <motion.div 
           className="flex items-center justify-between py-6"
           initial={{ opacity: 0, y: -20 }}
@@ -1015,6 +1018,8 @@ export default function TableViewPage() {
           </motion.div>
         </div>
       </div>
+        </>
+      )}
       
       {/* Music Player */}
       {/* MusicPlayer component was removed from imports, so it's removed from here */}
